@@ -545,10 +545,11 @@ function webFooter(){return isNative()?"":`<div class="tag" style="margin:6px 0 
  no paid spins, easier questions, and child-directed ads. */
 function ageG(){try{return localStorage.getItem("nex_age")||""}catch(e){return""}}
 function isKid(){return ageG()==="kid"}
+function loadGA(){try{if(window.__ga||isKid()||!ageG()||isNative())return;window.__ga=1;var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id=G-KN15HD55SF";document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config","G-KN15HD55SF",{anonymize_ip:true,allow_google_signals:false,allow_ad_personalization_signals:false})}catch(e){}}
 function lvDiff(n){const g=ageG();if(g==="kid")return n<=6?"easy":"medium";if(g==="adult")return n<=2?"easy":(n<=5?"medium":"hard");return n<=3?"easy":(n<=6?"medium":"hard")}
 function setAge(g){try{localStorage.setItem("nex_age",g)}catch(e){}
  if(g==="kid"){cfg.bet="0";cfg.online=false;cfg.diff="easy"}else cfg.diff="smart";
- if(window.__adReset)window.__adReset()}
+ if(window.__adReset)window.__adReset();loadGA()}
 function pickAge(g){setAge(g);home()}
 function ageChips(){const A=[["kid","🧒 Kids 6–12"],["teen","🧑 Teens 13–17"],["adult","🧑‍🦱 Adults 18+"]];
  return `<div class="row">`+A.map(a=>`<div class="chip ${ageG()===a[0]?'on':''}" onclick="setAge('${a[0]}');settings()">${a[1]}</div>`).join("")+`</div>`}
@@ -741,7 +742,7 @@ function useTime(){if(!S||S.locked)return;const p=load();if(p.time<1)return;p.ti
   window.onRewardedAd(ok)}};
 }catch(e){}})();
 
-if(!ageG())ageScreen();else home();initRef();claimRefs(true);initAuth();
+if(!ageG())ageScreen();else home();initRef();claimRefs(true);initAuth();loadGA();
 </script>
 </body>
 </html>

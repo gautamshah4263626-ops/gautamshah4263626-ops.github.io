@@ -200,7 +200,7 @@ function chips(key,items){return `<div class="row">`+items.map(([v,l])=>`<div cl
 function setCfg(k,v){cfg[k]=v;settings()}
 function xpInfo(p){const xp=p.right*10+p.games*20;return{xp:xp,lv:Math.floor(xp/500)+1,cur:xp%500}}
 function cleared(p){return Object.keys(p.stars).filter(k=>p.stars[k]>0).length}
-function notifCount(p){return (p.day!==today()?1:0)+(p.spin!==today()?1:0)+(cleared(p)<10?1:0)}
+function notifCount(p){return (p.day!==today()?1:0)+(p.spin!==today()?1:0)+(cleared(p)<MAXLV?1:0)}
 function bigPh(){const p=photo();return p?`<img class="big-ph" src="${p}" alt="">`:`<div class="big-ph">🧑</div>`}
 function navHTML(a){const it=[["home","🏠","Home","home()"],["lb","🏆","Leaderboard","board()"],["ach","🏅","Achievements","achievements()"],["pro","👤","Profile","profile()"]];
  return `<div id="nav">`+it.map(x=>`<div class="${x[0]===a?'on':''}" onclick="${x[3]}"><span>${x[1]}</span>${x[2]}</div>`).join("")+`</div>`}
@@ -210,7 +210,7 @@ function board(){board0();addNav("lb")}
 async function boardOnline0(){await boardOnline0();addNav("lb")}
 
 function home(){LV=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
- const p=load(),x=xpInfo(p),pr=Math.round(cleared(p)/10*100),nc=notifCount(p),dc=p.day===today(),sf=p.spin!==today();
+ const p=load(),x=xpInfo(p),pr=Math.round(cleared(p)/MAXLV*100),nc=notifCount(p),dc=p.day===today(),sf=p.spin!==today();
  const T6=[["diff","easy","t-easy","⚡",t('easy'),"Quiz"],["diff","medium","t-med","⭐",t('medium'),"Quiz"],["diff","hard","t-hard","🏆",t('hard'),"Quiz"],
   ["mode","teacher","t-tea","🎓",t('teacher'),"Mode"],["mode","battle","t-bat","⚔️",t('battle'),"Mode"],["mode","smart","t-ai","🤖",t('smartai'),"Mode"]];
  app.innerHTML=`<div class="topbar"><div class="logo"><i>🧠</i><div>AI QUIZ<b>BATTLE</b></div></div>
@@ -227,14 +227,14 @@ function home(){LV=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
   <div class="mini"><span class="ic">🎰</span>Lucky Spin<button onclick="spin()">${sf?'Spin Now ›':(isKid()?'Tomorrow':'30 🪙 ›')}</button></div>
   <div class="mini">Your Progress<span class="pct">${pr}%</span><div class="bar2" style="width:100%"><i style="width:${pr}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></i></div></div>
  </div>
- <div class="lvban"><span class="ic">🛡️</span><div class="tx"><b>Level Mode (1–10)</b>Complete 10 Levels &amp; Become a Quiz Master!</div><button onclick="levels()">Start Now ›</button></div>
+ <div class="lvban"><span class="ic">🛡️</span><div class="tx"><b>Level Mode (1–30)</b>Complete 30 Levels &amp; Become a Quiz Master!</div><button onclick="levels()">Start Now ›</button></div>
  ${(window.AndroidAds||ADS_DEMO)?`<button class="btn sec" onclick="watchAd()">📺 Watch Ad = +${AD_COINS} 🪙 (${adLeft(p)}/${AD_MAX} today)</button>`:''}${adBanner()}${webFooter()}`;
  addNav("home")}
 
 function notif(){const p=load();const L=[];
  if(p.day!==today())L.push(["🎁","Daily reward ready","daily()"]);
  if(p.spin!==today())L.push(["🎰","Free Lucky Spin","spin()"]);
- if(cleared(p)<10)L.push(["🎯","Continue Level "+Math.min(p.lvl,10),"levels()"]);
+ if(cleared(p)<MAXLV)L.push(["🎯","Continue Level "+Math.min(p.lvl,MAXLV),"levels()"]);
  app.innerHTML=`<h1>🔔 Notifications</h1><div class="card">`+(L.length?L.map(x=>`<button class="opt" onclick="${x[2]}">${x[0]} ${x[1]}</button>`).join(""):`<div class="bubble">All caught up ✅</div>`)+`</div><button class="btn sec" onclick="home()">${t('home')}</button>`}
 
 function settings(){
@@ -249,7 +249,7 @@ function settings(){
 function resetAll(){if(confirm("Reset all progress, coins and photo?")){["nex_prog","nex_sig","nex_lb","nex_photo","nex_name","nex_pid"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});home()}}
 
 function achievements(){const p=load();
- const A=[["🥇","First game",p.games>=1],["🎯","10 correct answers",p.right>=10],["🧠","100 correct answers",p.right>=100],["🚀","Reach Level 5",p.lvl>=5],["🏆","Clear all 10 levels",cleared(p)>=10],["⭐","3 stars on a level",Object.values(p.stars).some(v=>v>=3)],["💰","Own 500 coins",p.coins>=500],["🔥","3-day streak",p.dstreak>=3],["🎁","Invite a friend",p.refc>=1],["📸","Add your photo",!!photo()]];
+ const A=[["🥇","First game",p.games>=1],["🎯","10 correct answers",p.right>=10],["🧠","100 correct answers",p.right>=100],["🚀","Reach Level 5",p.lvl>=5],["🏆","Clear 10 levels",cleared(p)>=10],["👑","Clear all 30 levels",cleared(p)>=30],["⭐","3 stars on a level",Object.values(p.stars).some(v=>v>=3)],["💰","Own 500 coins",p.coins>=500],["🔥","3-day streak",p.dstreak>=3],["🎁","Invite a friend",p.refc>=1],["📸","Add your photo",!!photo()]];
  const n=A.filter(a=>a[2]).length;
  app.innerHTML=`<h1>🏅 Achievements</h1><div class="tag">${n}/${A.length}</div><div class="card" style="text-align:center">`+A.map(a=>`<div class="badge ${a[2]?'on':''}"><span>${a[2]?a[0]:'🔒'}</span>${a[1]}</div>`).join("")+`</div>`;
  addNav("ach")}
@@ -258,7 +258,7 @@ function profile(){const p=load(),x=xpInfo(p);
  app.innerHTML=`<h1>👤 Profile</h1><div class="card" style="text-align:center"><label style="cursor:pointer">${phHTML(96)}<input type="file" accept="image/*" style="display:none" onchange="upPhoto(this)"></label>
  <div class="lbl" style="text-align:left">Name</div><input class="inp" value="${esc(pname())}" maxlength="14" placeholder="Player" oninput="setName(this.value)">
  <div class="score" style="margin-top:12px"><div><b>${x.lv}</b>Level</div><div><b>${p.games}</b>${t('games')}</div><div><b>${p.best}</b>${t('best')}</div></div>
- <div class="score" style="margin-top:8px"><div><b>${p.total?Math.round(p.right/p.total*100):0}%</b>${t('acc')}</div><div><b>${p.coins}</b>Coins</div><div><b>${cleared(p)}/10</b>Levels</div></div></div>
+ <div class="score" style="margin-top:8px"><div><b>${p.total?Math.round(p.right/p.total*100):0}%</b>${t('acc')}</div><div><b>${p.coins}</b>Coins</div><div><b>${cleared(p)}/${MAXLV}</b>Levels</div></div></div>
  ${acctHTML()}<button class="btn" onclick="shop()">🛒 ${c('shop')}</button>${isKid()?'':'<button class="btn sec" onclick="invite()">🎁 Invite</button>'}<button class="btn sec" onclick="settings()">⚙️ Settings</button>`;
  addNav("pro")}
 
@@ -360,10 +360,10 @@ function result(){
  const p=load();let betMsg="";
  if(S.bet&&cfg.mode!=="teacher"){if(S.you>S.ai){p.coins+=S.bet*2;betMsg=`+${S.bet*2} 🪙 (${c('betwin')})`}else if(S.you===S.ai){p.coins+=S.bet;betMsg=c('betdraw')}else betMsg=`-${S.bet} 🪙`}
  let lvMsg="";
- if(LV){const pass=S.right>=3;const st=S.right>=5?3:S.right>=4?2:S.right>=3?1:0;const prev=p.stars[LV]||0;
-  if(pass){if(!prev){const rw=30+LV*10;p.coins+=rw;lvMsg=`🎉 Level ${LV} ✅ +${rw} 🪙`}else lvMsg=`Level ${LV} ✅`;
-   p.stars[LV]=Math.max(prev,st);if(LV===p.lvl&&LV<10)p.lvl=LV+1}
-  else lvMsg=`Level ${LV} ❌ (3/5)`;
+ if(LV){const need=lvNeed(LV);const pass=S.right>=need;const st=S.right>=5?3:S.right>=4?2:S.right>=3?1:0;const prev=p.stars[LV]||0;
+  if(pass){if(!prev){const rw=LV<=10?30+LV*10:130+(LV-10)*5;p.coins+=rw;lvMsg=`🎉 Level ${LV} ✅ +${rw} 🪙`+(LV===MAXLV?' · 👑 You are a Quiz Master!':'')}else lvMsg=`Level ${LV} ✅`;
+   p.stars[LV]=Math.max(prev,st);if(LV===p.lvl&&LV<MAXLV)p.lvl=LV+1}
+  else lvMsg=`Level ${LV} ❌ (${need}/5)`;
   S.lvPass=pass}
  p.games++;p.total+=n;p.right+=S.right;p.best=Math.max(p.best,S.you);save(p);lbAdd(S.you,n,acc);syncOnline(p);snd(S.you>=S.ai?"win":"bad");
  let verdict="";
@@ -375,7 +375,7 @@ function result(){
  <div class="score" style="margin-top:10px"><div><b>${acc}%</b>${t('acc')}</div>${cfg.mode!=="teacher"?`<div><b>${S.ai}</b>${t('ai')}</div>`:''}<div><b>${S.streak}</b>🔥</div></div>
  <div class="exp">🪙 +${S.coins} ${c('earned')}${betMsg?' · '+betMsg:''} · ${c('total')}: ${p.coins}${lvMsg?'<br><b>'+lvMsg+'</b>':''}</div>
  <div class="lbl">${t('rep')}</div><div class="exp">${t('tip')}: ${tip}</div></div>${adBanner()}
- ${LV?((S.lvPass&&LV<10?`<button class="btn" onclick="startLevel(${LV+1})">Next Level ➜</button>`:'')+`<button class="btn ${S.lvPass&&LV<10?'sec':''}" onclick="startLevel(${LV})">🔁 Retry</button><button class="btn sec" onclick="levels()">🎯 Levels</button>`):`<button class="btn" onclick="startGame()">${t('again')}</button>`}<button class="btn sec" onclick="home()">${t('home')}</button>`;
+ ${LV?((S.lvPass&&LV<MAXLV?`<button class="btn" onclick="startLevel(${LV+1})">Next Level ➜</button>`:'')+`<button class="btn ${S.lvPass&&LV<MAXLV?'sec':''}" onclick="startLevel(${LV})">🔁 Retry</button><button class="btn sec" onclick="levels()">🎯 Levels</button>`):`<button class="btn" onclick="startGame()">${t('again')}</button>`}<button class="btn sec" onclick="home()">${t('home')}</button>`;
 }
 
 /* ========== SOUND, NAME, LEADERBOARD ========== */
@@ -550,7 +550,7 @@ function webFooter(){return isNative()?"":`<div class="tag" style="margin:6px 0 
 function ageG(){try{return localStorage.getItem("nex_age")||""}catch(e){return""}}
 function isKid(){return ageG()==="kid"}
 function loadGA(){try{if(window.__ga||isKid()||!ageG()||isNative())return;window.__ga=1;var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id=G-KN15HD55SF";document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config","G-KN15HD55SF",{anonymize_ip:true,allow_google_signals:false,allow_ad_personalization_signals:false})}catch(e){}}
-function lvDiff(n){const g=ageG();if(g==="kid")return n<=6?"easy":"medium";if(g==="adult")return n<=2?"easy":(n<=5?"medium":"hard");return n<=3?"easy":(n<=6?"medium":"hard")}
+function lvDiff(n){const g=ageG();if(g==="kid")return n<=15?"easy":"medium";if(g==="adult")return n<=3?"easy":(n<=12?"medium":"hard");return n<=6?"easy":(n<=18?"medium":"hard")}
 function setAge(g){try{localStorage.setItem("nex_age",g)}catch(e){}
  if(g==="kid"){cfg.bet="0";cfg.online=false;cfg.diff="easy";cfg.cat="kids"}else{cfg.diff="smart";if(cfg.cat==="kids")cfg.cat="all"}
  if(window.__adReset)window.__adReset();loadGA()}
@@ -571,11 +571,15 @@ function ageScreen(){
 
 /* ========== LEVELS ========== */
 let LV=null,CFG0=null;
+const MAXLV=30;
+function lvNeed(n){return n>20?4:3}
 function levels(){const p=load();LV=null;
- app.innerHTML=`<h1>🎯 Levels</h1><div class="card"><div class="tag">Harder with every level<br>5 questions · 3/5 = Pass ✅ · ⭐⭐⭐ = 5/5</div><div class="row">`+
- Array.from({length:10},(_,i)=>{const n=i+1,lock=n>p.lvl,st=p.stars[n]||0;
-  return `<div class="chip ${lock?'':'on'}" style="width:calc(20% - 8px);text-align:center;padding:12px 0;${lock?'opacity:.45':''}" onclick="${lock?'':'startLevel('+n+')'}">${lock?'🔒':n}<br><small>${lock?'&nbsp;':'⭐'.repeat(st)+'☆'.repeat(3-st)}</small></div>`}).join("")+
- `</div></div><button class="btn sec" onclick="home()">${t('home')}</button>`}
+ if(p.stars[p.lvl]>0&&p.lvl<MAXLV){p.lvl++;save(p)}
+ const T=[["🌱 Beginner (1–10)",1,10],["⚡ Pro (11–20)",11,20],["👑 Master (21–30)",21,30]];
+ app.innerHTML=`<h1>🎯 Levels</h1><div class="card"><div class="tag">Harder with every level · ${cleared(p)}/${MAXLV} cleared<br>5 questions · 3/5 = Pass ✅ (Master levels: 4/5) · ⭐⭐⭐ = 5/5</div></div>`+
+ T.map(t=>`<div class="card"><div class="lbl">${t[0]}</div><div class="row">`+Array.from({length:t[2]-t[1]+1},(_,i)=>{const n=t[1]+i,lock=n>p.lvl,st=p.stars[n]||0;
+  return `<div class="chip ${lock?'':'on'}" style="width:calc(20% - 8px);text-align:center;padding:12px 0;${lock?'opacity:.45':''}" onclick="${lock?'':'startLevel('+n+')'}">${lock?'🔒':n}<br><small>${lock?'&nbsp;':'⭐'.repeat(st)+'☆'.repeat(3-st)}</small></div>`}).join("")+`</div></div>`).join("")+
+ `<button class="btn sec" onclick="home()">${t('home')}</button>`}
 function startLevel(n){if(!CFG0)CFG0=Object.assign({},cfg);
  LV=n;ROUND=5;cfg.cat="all";cfg.bet="0";cfg.online=false;cfg.diff=lvDiff(n);startGame()}
 

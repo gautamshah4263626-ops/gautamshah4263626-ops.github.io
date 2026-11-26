@@ -239,7 +239,7 @@ function notif(){const p=load();const L=[];
 
 function settings(){
  app.innerHTML=`<h1>⚙️ Settings</h1><div class="card"><div class="lbl">${t('lang')}</div>${chips('lang',[["hi","हिन्दी"],["en","English"],["ne","नेपाली"]])}
- <div class="lbl">${t('cat')}</div>${chips('cat',[["all",t('all')],["gk",t('gk')],["sci",t('sci')],["math",t('math')],["eng",t('eng')],["pic","📷 "+c2('pic')]])}
+ <div class="lbl">${t('cat')}</div>${chips('cat',(isKid()?[["kids","🧒 "+c2('kids')]]:[]).concat([["all",t('all')],["gk",t('gk')],["sci",t('sci')],["math",t('math')],["eng",t('eng')],["pic","📷 "+c2('pic')]],isKid()?[]:[["kids","🧒 "+c2('kids')]]))}
  ${(cfg.mode!=="teacher"&&!isKid())?`<div class="lbl">${c('bet')}</div>${chips('bet',[["0","0"],["20","🪙 20"],["50","🪙 50"]])}`:''}
  ${isKid()?'':`<div class="lbl">Online</div><label style="font-size:14px"><input type="checkbox" ${cfg.online?'checked':''} onchange="cfg.online=this.checked"> ${t('online')}</label>`}
  <div class="lbl">Age group</div>${ageChips()}
@@ -266,7 +266,7 @@ function profile(){const p=load(),x=xpInfo(p);
 async function startGame(){
  S={used:[],i:0,you:0,ai:0,right:0,streak:0,wrongStreak:0,level:cfg.diff==="smart"?(ageG()==="kid"?"easy":"medium"):cfg.diff,online:[],note:"",coins:0,bet:0};
  {const p=load();const b=Number(cfg.bet)||0;if(cfg.mode!=="teacher"&&b>0&&!isKid()&&p.coins>=b){p.coins-=b;save(p);S.bet=b}}
- if(cfg.online&&!isKid()&&cfg.cat!=="eng"&&cfg.cat!=="pic"){
+ if(cfg.online&&!isKid()&&cfg.cat!=="eng"&&cfg.cat!=="pic"&&cfg.cat!=="kids"){
   app.innerHTML=`<div class="card"><div class="nex">${avatar()}<div class="bubble">${t('loading')}</div></div></div>`;
   S.online=await fetchOnline();
   if(!S.online.length)S.note=t('offl');
@@ -308,7 +308,7 @@ function nextQ(){
  let q=null;
  if(S.online.length){q=S.online.shift()}
  else{
-  let pool=Q.filter((x,ix)=>!S.used.includes(ix)&&(cfg.cat==="all"||x.c===cfg.cat));
+  let pool=Q.filter((x,ix)=>!S.used.includes(ix)&&(cfg.cat==="all"?(x.c!=="kids"||isKid()):x.c===cfg.cat));
   if(!pool.length)return result();
   let lv=pool.filter(x=>x.d===S.level);
   if(isKid()&&!lv.length){const nh=pool.filter(x=>x.d!=="hard");if(nh.length)lv=nh}
@@ -351,7 +351,7 @@ function answer(i){
  const say=ok?pick(T[cfg.lang].ok1):(i===-1?t('time'):pick(T[cfg.lang].bad1));
  $("#say").textContent=say;
  $(".nex svg").outerHTML=avatar(ok?"happy":"sad");
- $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${aiTxt}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&(cfg.cat==="all"||x.c===cfg.cat)).length===0)?t('finish'):t('next')}</button>`;
+ $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${aiTxt}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&(cfg.cat==="all"?(x.c!=="kids"||isKid()):x.c===cfg.cat)).length===0)?t('finish'):t('next')}</button>`;
 }
 
 function result(){
@@ -552,7 +552,7 @@ function isKid(){return ageG()==="kid"}
 function loadGA(){try{if(window.__ga||isKid()||!ageG()||isNative())return;window.__ga=1;var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id=G-KN15HD55SF";document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config","G-KN15HD55SF",{anonymize_ip:true,allow_google_signals:false,allow_ad_personalization_signals:false})}catch(e){}}
 function lvDiff(n){const g=ageG();if(g==="kid")return n<=6?"easy":"medium";if(g==="adult")return n<=2?"easy":(n<=5?"medium":"hard");return n<=3?"easy":(n<=6?"medium":"hard")}
 function setAge(g){try{localStorage.setItem("nex_age",g)}catch(e){}
- if(g==="kid"){cfg.bet="0";cfg.online=false;cfg.diff="easy"}else cfg.diff="smart";
+ if(g==="kid"){cfg.bet="0";cfg.online=false;cfg.diff="easy";cfg.cat="kids"}else{cfg.diff="smart";if(cfg.cat==="kids")cfg.cat="all"}
  if(window.__adReset)window.__adReset();loadGA()}
 function pickAge(g){setAge(g);home()}
 function ageChips(){const A=[["kid","🧒 Kids 6–12"],["teen","🧑 Teens 13–17"],["adult","🧑‍🦱 Adults 18+"]];
@@ -669,9 +669,9 @@ async function boardOnline(){
 
 /* ========== PHOTOS ========== */
 const C2={
- hi:{pic:"फ़ोटो क्विज़",photo:"अपनी Photo लगाओ: गोले पर टैप करो। VS स्क्रीन और स्कोर में दिखेगी!"},
- en:{pic:"Photo Quiz",photo:"Add your photo: tap the circle. It shows on the VS screen and scoreboard!"},
- ne:{pic:"फोटो क्विज",photo:"आफ्नो फोटो राख्नुहोस्: गोलोमा ट्याप गर्नुहोस्। VS स्क्रिन र स्कोरमा देखिन्छ!"}
+ hi:{kids:"बच्चों का क्विज़",pic:"फ़ोटो क्विज़",photo:"अपनी Photo लगाओ: गोले पर टैप करो। VS स्क्रीन और स्कोर में दिखेगी!"},
+ en:{kids:"Kids Fun",pic:"Photo Quiz",photo:"Add your photo: tap the circle. It shows on the VS screen and scoreboard!"},
+ ne:{kids:"बालबालिका क्विज",pic:"फोटो क्विज",photo:"आफ्नो फोटो राख्नुहोस्: गोलोमा ट्याप गर्नुहोस्। VS स्क्रिन र स्कोरमा देखिन्छ!"}
 };
 function c2(k){return C2[cfg.lang][k]}
 function photo(){try{return localStorage.getItem("nex_photo")||""}catch(e){return""}}
@@ -679,6 +679,60 @@ function phHTML(sz){const p=photo();const st=sz?`style="width:${sz}px;height:${s
 function upPhoto(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=new FileReader();
  r.onload=e=>{const im=new Image();im.onload=()=>{const cv=document.createElement("canvas");cv.width=cv.height=160;const x=cv.getContext("2d");const s=Math.min(im.width,im.height);
   x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);try{localStorage.setItem("nex_photo",cv.toDataURL("image/jpeg",.8))}catch(err){}home()};im.src=e.target.result};r.readAsDataURL(f)}
+
+/* ========== KIDS FUN pack (easy questions with pictures, for ages 6-12) ==========
+ K(difficulty, emoji, "en|hi|ne question", "opt1;opt2;opt3;opt4", correctIndex, "en|hi|ne explanation") */
+function K(d,em,q,o,a,e){A("kids",d,q,o,a,e);Q[Q.length-1].em=em}
+K("easy","🐄","Which animal gives us milk?|कौन-सा जानवर हमें दूध देता है?|कुन जनावरले हामीलाई दूध दिन्छ?","Cow;Dog;Cat;Lion",0,"The cow gives us milk.|गाय हमें दूध देती है।|गाईले हामीलाई दूध दिन्छ।");
+K("easy","🐶","Which animal says 'Bow-wow'?|कौन-सा जानवर 'भौं-भौं' करता है?|कुन जनावरले 'भौं-भौं' गर्छ?","Cat;Cow;Dog;Duck",2,"The dog says 'Bow-wow'.|कुत्ता 'भौं-भौं' करता है।|कुकुरले 'भौं-भौं' गर्छ।");
+K("easy","🐱","Which animal says 'Meow'?|कौन-सा जानवर 'म्याऊँ' करता है?|कुन जनावरले 'म्याउँ' गर्छ?","Dog;Cat;Horse;Goat",1,"The cat says 'Meow'.|बिल्ली 'म्याऊँ' करती है।|बिरालोले 'म्याउँ' गर्छ।");
+K("easy","🦁","Who is the king of the jungle?|जंगल का राजा कौन है?|जंगलको राजा को हो?","Rabbit;Deer;Lion;Fox",2,"The lion is called the king of the jungle.|शेर को जंगल का राजा कहा जाता है।|सिंहलाई जंगलको राजा भनिन्छ।");
+K("easy","🐘","Which animal has a long trunk?|किस जानवर की लंबी सूँड़ होती है?|कुन जनावरको लामो सुँड हुन्छ?","Horse;Elephant;Cow;Tiger",1,"The elephant has a long trunk.|हाथी की लंबी सूँड़ होती है।|हात्तीको लामो सुँड हुन्छ।");
+K("easy","🐒","Which animal loves bananas?|कौन-सा जानवर केले खाना पसंद करता है?|कुन जनावरलाई केरा मन पर्छ?","Monkey;Fish;Frog;Snake",0,"Monkeys love bananas.|बंदर को केले बहुत पसंद हैं।|बाँदरलाई केरा धेरै मन पर्छ।");
+K("easy","🐟","Where does a fish live?|मछली कहाँ रहती है?|माछा कहाँ बस्छ?","Tree;Sky;Water;Sand",2,"A fish lives in water.|मछली पानी में रहती है।|माछा पानीमा बस्छ।");
+K("easy","🐦","Which of these can fly?|इनमें से कौन उड़ सकता है?|यिनमध्ये कुन उड्न सक्छ?","Cow;Bird;Dog;Fish",1,"A bird can fly with its wings.|पक्षी अपने पंखों से उड़ता है।|चरा आफ्ना पखेटाले उड्छ।");
+K("easy","🐢","Which animal is slow and has a hard shell?|कौन-सा जानवर धीमा होता है और उसकी पीठ पर कठोर खोल होता है?|कुन जनावर सुस्त हुन्छ र उसको पिठ्युँमा कडा खोल हुन्छ?","Rabbit;Deer;Horse;Tortoise",3,"The tortoise is slow and carries a shell.|कछुआ धीमा चलता है और खोल साथ रखता है।|कछुवा सुस्त हिँड्छ र खोल बोक्छ।");
+K("easy","🐯","Which animal has stripes on its body?|किस जानवर के शरीर पर धारियाँ होती हैं?|कुन जनावरको शरीरमा धर्काहरू हुन्छन्?","Tiger;Cow;Elephant;Dog",0,"The tiger has stripes.|बाघ के शरीर पर धारियाँ होती हैं।|बाघको शरीरमा धर्काहरू हुन्छन्।");
+K("easy","🐓","Which bird wakes us up in the morning?|कौन-सा पक्षी हमें सुबह जगाता है?|कुन चराले हामीलाई बिहान उठाउँछ?","Owl;Rooster;Crow;Parrot",1,"The rooster crows in the morning.|मुर्गा सुबह बाँग देता है।|भाले बिहान बास्छ।");
+K("easy","🐝","Which insect makes honey?|कौन-सा कीड़ा शहद बनाता है?|कुन कीराले मह बनाउँछ?","Ant;Fly;Bee;Spider",2,"Bees make honey from flowers.|मधुमक्खी फूलों से शहद बनाती है।|माहुरीले फूलबाट मह बनाउँछ।");
+K("easy","🐸","Which animal jumps and says 'Croak'?|कौन-सा जानवर कूदता है और 'टर्र-टर्र' करता है?|कुन जनावर उफ्रन्छ र 'डराउ-डराउ' गर्छ?","Frog;Cat;Cow;Bird",0,"The frog jumps and croaks.|मेंढक कूदता है और टर्र-टर्र करता है।|भ्यागुता उफ्रन्छ र डराउ-डराउ गर्छ।");
+K("easy","🍎","What color is a ripe apple usually?|पका सेब आमतौर पर किस रंग का होता है?|पाकेको स्याउ प्रायः कुन रङको हुन्छ?","🔴;🔵;⚫;⚪",0,"A ripe apple is usually red.|पका सेब आमतौर पर लाल होता है।|पाकेको स्याउ प्रायः रातो हुन्छ।");
+K("easy","🍌","What color is a ripe banana?|पका केला किस रंग का होता है?|पाकेको केरा कुन रङको हुन्छ?","🟣;🟡;🟢;🔵",1,"A ripe banana is yellow.|पका केला पीला होता है।|पाकेको केरा पहेँलो हुन्छ।");
+K("easy","🌿","What color are most leaves?|ज़्यादातर पत्ते किस रंग के होते हैं?|धेरैजसो पातहरू कुन रङका हुन्छन्?","🔴;🟢;🟣;⚫",1,"Most leaves are green.|ज़्यादातर पत्ते हरे होते हैं।|धेरैजसो पातहरू हरिया हुन्छन्।");
+K("easy","🌤️","What color is the sky on a clear day?|साफ़ दिन में आसमान किस रंग का होता है?|सफा दिनमा आकाश कुन रङको हुन्छ?","🟠;🔴;🟢;🔵",3,"The sky looks blue on a clear day.|साफ़ दिन में आसमान नीला दिखता है।|सफा दिनमा आकाश नीलो देखिन्छ।");
+K("medium","🌈","How many colors are in a rainbow?|इंद्रधनुष में कितने रंग होते हैं?|इन्द्रेणीमा कतिवटा रङ हुन्छन्?","5;6;7;8",2,"A rainbow has 7 colors: VIBGYOR.|इंद्रधनुष में 7 रंग होते हैं।|इन्द्रेणीमा ७ वटा रङ हुन्छन्।");
+K("medium","🎨","Red and yellow mixed together make which color?|लाल और पीला रंग मिलाने से कौन-सा रंग बनता है?|रातो र पहेँलो रङ मिसाउँदा कुन रङ बन्छ?","Orange;Green;Purple;Black",0,"Red + yellow = orange.|लाल + पीला = नारंगी।|रातो + पहेँलो = सुन्तला रङ।");
+K("easy","✋","How many fingers are on one hand?|एक हाथ में कितनी उँगलियाँ होती हैं?|एउटा हातमा कतिवटा औँला हुन्छन्?","4;5;6;10",1,"One hand has 5 fingers.|एक हाथ में 5 उँगलियाँ होती हैं।|एउटा हातमा ५ वटा औँला हुन्छन्।");
+K("easy","🍎🍎🍎","How many apples can you see?|तुम्हें कितने सेब दिख रहे हैं?|तिमीलाई कतिवटा स्याउ देखिन्छ?","2;3;4;5",1,"There are 3 apples.|यहाँ 3 सेब हैं।|यहाँ ३ वटा स्याउ छन्।");
+K("easy","⭐⭐⭐⭐","How many stars can you see?|तुम्हें कितने तारे दिख रहे हैं?|तिमीलाई कतिवटा तारा देखिन्छ?","3;4;5;6",1,"There are 4 stars.|यहाँ 4 तारे हैं।|यहाँ ४ वटा तारा छन्।");
+K("easy","🔢","What number comes after 9?|9 के बाद कौन-सी संख्या आती है?|९ पछि कुन संख्या आउँछ?","8;10;11;12",1,"After 9 comes 10.|9 के बाद 10 आता है।|९ पछि १० आउँछ।");
+K("easy","➕","2 + 3 = ?","4;5;6;7",1,"2 + 3 = 5.|2 + 3 = 5 होता है।|२ + ३ = ५ हुन्छ।");
+K("medium","➖","5 − 2 = ?","2;3;4;7",1,"5 − 2 = 3.|5 − 2 = 3 होता है।|५ − २ = ३ हुन्छ।");
+K("easy","📅","How many days are there in a week?|एक हफ़्ते में कितने दिन होते हैं?|एक हप्तामा कति दिन हुन्छन्?","5;6;7;8",2,"A week has 7 days.|एक हफ़्ते में 7 दिन होते हैं।|एक हप्तामा ७ दिन हुन्छन्।");
+K("easy","🐕","How many legs does a dog have?|कुत्ते के कितने पैर होते हैं?|कुकुरका कतिवटा खुट्टा हुन्छन्?","2;3;4;6",2,"A dog has 4 legs.|कुत्ते के 4 पैर होते हैं।|कुकुरका ४ वटा खुट्टा हुन्छन्।");
+K("easy","👀","How many eyes do we have?|हमारी कितनी आँखें होती हैं?|हाम्रा कतिवटा आँखा हुन्छन्?","1;2;3;4",1,"We have 2 eyes.|हमारी 2 आँखें होती हैं।|हाम्रा २ वटा आँखा हुन्छन्।");
+K("easy","🥭","Which fruit is this?|यह कौन-सा फल है?|यो कुन फल हो?","Mango;Apple;Banana;Grapes",0,"This is a mango, the king of fruits.|यह आम है, फलों का राजा।|यो आँप हो, फलफूलको राजा।");
+K("easy","🍌","Which fruit is this?|यह कौन-सा फल है?|यो कुन फल हो?","Apple;Banana;Orange;Mango",1,"This is a banana.|यह केला है।|यो केरा हो।");
+K("easy","🍊","Which fruit is this?|यह कौन-सा फल है?|यो कुन फल हो?","Papaya;Orange;Grapes;Pear",1,"This is an orange. It is full of vitamin C.|यह संतरा है। इसमें विटामिन C होता है।|यो सुन्तला हो। यसमा भिटामिन C हुन्छ।");
+K("easy","🍇","Which fruit is this?|यह कौन-सा फल है?|यो कुन फल हो?","Cherry;Apple;Grapes;Mango",2,"These are grapes.|ये अंगूर हैं।|यी अंगुर हुन्।");
+K("easy","🥕","Which vegetable is this?|यह कौन-सी सब्ज़ी है?|यो कुन तरकारी हो?","Potato;Carrot;Onion;Cabbage",1,"This is a carrot. It is good for our eyes.|यह गाजर है। यह आँखों के लिए अच्छी है।|यो गाजर हो। यो आँखाका लागि राम्रो हुन्छ।");
+K("easy","🥛","What do we drink to make our bones strong?|हड्डियाँ मज़बूत करने के लिए हम क्या पीते हैं?|हड्डी बलियो बनाउन हामी के पिउँछौं?","Milk;Soap;Paint;Ink",0,"Milk has calcium that makes bones strong.|दूध में कैल्शियम होता है जो हड्डियाँ मज़बूत करता है।|दूधमा क्याल्सियम हुन्छ जसले हड्डी बलियो बनाउँछ।");
+K("easy","⚽","What shape is a ball?|गेंद का आकार कैसा होता है?|बलको आकार कस्तो हुन्छ?","Square;Round;Triangle;Star",1,"A ball is round.|गेंद गोल होती है।|बल गोलो हुन्छ।");
+K("medium","🔺","How many sides does a triangle have?|त्रिभुज की कितनी भुजाएँ होती हैं?|त्रिभुजका कतिवटा भुजा हुन्छन्?","2;3;4;5",1,"A triangle has 3 sides.|त्रिभुज की 3 भुजाएँ होती हैं।|त्रिभुजका ३ वटा भुजा हुन्छन्।");
+K("medium","⬜","How many sides does a square have?|वर्ग की कितनी भुजाएँ होती हैं?|वर्गका कतिवटा भुजा हुन्छन्?","4;3;5;6",0,"A square has 4 equal sides.|वर्ग की 4 बराबर भुजाएँ होती हैं।|वर्गका ४ वटा बराबर भुजा हुन्छन्।");
+K("easy","👃","Which part do we smell with?|हम किस अंग से सूँघते हैं?|हामी कुन अंगले सुँघ्छौं?","Ear;Hand;Nose;Foot",2,"We smell with our nose.|हम नाक से सूँघते हैं।|हामी नाकले सुँघ्छौं।");
+K("easy","👂","Which part do we hear with?|हम किससे सुनते हैं?|हामी केले सुन्छौं?","Eyes;Ears;Nose;Mouth",1,"We hear with our ears.|हम कानों से सुनते हैं।|हामी कानले सुन्छौं।");
+K("easy","👀","Which part do we see with?|हम किससे देखते हैं?|हामी केले देख्छौं?","Eyes;Ears;Nose;Teeth",0,"We see with our eyes.|हम आँखों से देखते हैं।|हामी आँखाले देख्छौं।");
+K("easy","🦷","What do we use to clean our teeth?|दाँत साफ़ करने के लिए हम क्या इस्तेमाल करते हैं?|दाँत सफा गर्न हामी के प्रयोग गर्छौं?","Comb;Toothbrush;Spoon;Pen",1,"We brush our teeth with a toothbrush every day.|हम रोज़ ब्रश से दाँत साफ़ करते हैं।|हामी हरेक दिन ब्रसले दाँत सफा गर्छौं।");
+K("easy","☀️","Which one shines in the sky during the day?|दिन में आसमान में कौन चमकता है?|दिनमा आकाशमा के चम्किन्छ?","Moon;Sun;Candle;Torch",1,"The Sun gives us light in the day.|सूरज दिन में हमें रोशनी देता है।|सूर्यले दिनमा हामीलाई उज्यालो दिन्छ।");
+K("easy","🌙","What do we see in the sky at night?|रात को आसमान में हम क्या देखते हैं?|रातमा आकाशमा हामी के देख्छौं?","Sun only;Moon and stars;Rainbow;Kite",1,"We see the Moon and stars at night.|रात को हमें चाँद और तारे दिखते हैं।|रातमा हामीलाई चन्द्रमा र तारा देखिन्छन्।");
+K("easy","🌧️","What falls from clouds as rain?|बादलों से बारिश में क्या गिरता है?|बादलबाट वर्षामा के झर्छ?","Sand;Water;Leaves;Milk",1,"Rain is water that falls from clouds.|बारिश बादलों से गिरा पानी है।|वर्षा बादलबाट झरेको पानी हो।");
+K("easy","🚌","Which vehicle carries many people on the road?|कौन-सा वाहन सड़क पर बहुत लोगों को ले जाता है?|कुन सवारी साधनले सडकमा धेरै मान्छे बोक्छ?","Bicycle;Bus;Boat;Plane",1,"A bus carries many people.|बस में बहुत लोग बैठ सकते हैं।|बसमा धेरै मान्छे अटाउँछन्।");
+K("easy","✈️","Which vehicle flies in the sky?|कौन-सा वाहन आसमान में उड़ता है?|कुन सवारी साधन आकाशमा उड्छ?","Car;Boat;Plane;Bus",2,"A plane flies in the sky.|हवाई जहाज़ आसमान में उड़ता है।|हवाईजहाज आकाशमा उड्छ।");
+K("easy","⛵","Which vehicle moves on water?|कौन-सा वाहन पानी पर चलता है?|कुन सवारी साधन पानीमा चल्छ?","Bus;Car;Train;Boat",3,"A boat moves on water.|नाव पानी पर चलती है।|डुङ्गा पानीमा चल्छ।");
+K("medium","🏔️","Which is the tallest mountain in the world?|दुनिया का सबसे ऊँचा पहाड़ कौन-सा है?|संसारको सबैभन्दा अग्लो हिमाल कुन हो?","Mount Everest;K2;Annapurna;Mount Fuji",0,"Mount Everest (Sagarmatha) is in Nepal.|एवरेस्ट (सगरमाथा) नेपाल में है।|सगरमाथा (एभरेस्ट) नेपालमा छ।");
+K("medium","🕐","How many hours are there in one day?|एक दिन में कितने घंटे होते हैं?|एक दिनमा कति घण्टा हुन्छन्?","12;24;30;60",1,"One day has 24 hours.|एक दिन में 24 घंटे होते हैं।|एक दिनमा २४ घण्टा हुन्छन्।");
+K("easy","📚","What do we read to learn new things?|नई बातें सीखने के लिए हम क्या पढ़ते हैं?|नयाँ कुरा सिक्न हामी के पढ्छौं?","Shoe;Book;Stone;Ball",1,"We learn new things from books.|हम किताबों से नई बातें सीखते हैं।|हामी किताबबाट नयाँ कुरा सिक्छौं।");
 
 /* Photo Quiz questions. For a real photo add img:"https://..." or a local file path like img:"photos/tiger.jpg" */
 Q.push(
@@ -746,7 +800,7 @@ function useTime(){if(!S||S.locked)return;const p=load();if(p.time<1)return;p.ti
   window.onRewardedAd(ok)}};
 }catch(e){}})();
 
-if(!ageG())ageScreen();else home();initRef();claimRefs(true);initAuth();loadGA();
+if(isKid())cfg.cat="kids";if(!ageG())ageScreen();else home();initRef();claimRefs(true);initAuth();loadGA();
 </script>
 </body>
 </html>

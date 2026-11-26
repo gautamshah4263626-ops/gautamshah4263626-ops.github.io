@@ -556,7 +556,7 @@ function adBanner(){if(isNative()||isKid()||ADS_DEMO||!WEB_ADS.client||!WEB_ADS.
 function pushAd(){try{
  if(!document.querySelector('script[src*="adsbygoogle.js"]')){const s=document.createElement("script");s.async=true;s.crossOrigin="anonymous";s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+WEB_ADS.client;document.head.appendChild(s)}
  document.querySelectorAll("ins.adsbygoogle:not([data-adsbygoogle-status])").forEach(function(){(window.adsbygoogle=window.adsbygoogle||[]).push({})})}catch(e){}}
-function webFooter(){return isNative()?"":`<div class="tag" style="margin:6px 0 14px"><a href="about.html" style="color:#38d6ff">About</a> · <a href="privacy.html" style="color:#38d6ff">Privacy</a> · <a href="contact.html" style="color:#38d6ff">Contact</a></div>`}
+function webFooter(){return isNative()?"":`<div class="tag" style="margin:6px 0 14px"><a href="learn.html" style="color:#38d6ff">Learn</a> · <a href="faq.html" style="color:#38d6ff">FAQ</a> · <a href="about.html" style="color:#38d6ff">About</a> · <a href="privacy.html" style="color:#38d6ff">Privacy</a> · <a href="contact.html" style="color:#38d6ff">Contact</a></div>`}
 
 /* ========== AGE GROUP (made for all ages) ==========
  First start asks "Who is playing?" (Kids 6-12, Teens 13-17, Adults 18+). The answer stays on the device.

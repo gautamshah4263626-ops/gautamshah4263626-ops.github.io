@@ -104,6 +104,11 @@ small{color:var(--mut)}
 .mini .ic{font-size:36px}
 .mini button{border:0;border-radius:14px;padding:7px 10px;background:linear-gradient(#ffd54a,#ffb300);color:#3a2400;font-weight:800;font-size:14px;cursor:pointer}
 .mini button:disabled{opacity:.6}
+.tile.big3{font-size:14px;line-height:1.15;min-height:128px;padding:14px 6px 12px}
+.tile.big3 small{font-size:11px;font-weight:500;margin-top:5px;opacity:.85}
+.t-rep{background:linear-gradient(160deg,#0b2a6b,#08143a);border-color:#38d6ff99;color:#ffd54a}
+.t-mp{background:linear-gradient(160deg,#4b1fa8,#1a0d4d);border-color:#a78bfa99}
+.t-bm{background:linear-gradient(160deg,#0f7a2a,#073d17);border-color:#4ade8099}
 .mini .pct{font-size:28px;font-weight:900}
 .lvban{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1b1b78,#0b1240);border:1.5px solid #5b4bff;border-radius:22px;padding:12px;margin:12px 0;box-shadow:0 0 18px #5b4bff55}
 .lvban .ic{font-size:44px}
@@ -180,7 +185,7 @@ let ROUND=8;const TIME=15;
 function t(k){return T[cfg.lang][k]}
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function hsh(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
-function load(){const d={games:0,best:0,total:0,right:0,coins:50,day:"",dstreak:0,spin:"",fifty:1,time:1,skin:"blue",skins:["blue"],lvl:1,stars:{},refc:0,refd:0};
+function load(){const d={games:0,best:0,total:0,right:0,coins:50,day:"",dstreak:0,spin:"",fifty:1,time:1,skin:"blue",skins:["blue"],lvl:1,stars:{},refc:0,refd:0,bm:[],mist:[],cs:{}};
  try{const raw=localStorage.getItem("nex_prog");if(!raw)return d;
   const sig=localStorage.getItem("nex_sig");if(sig&&sig!==hsh(raw+"nexQ#7"))return d; /* edited by hand -> reset */
   const o=Object.assign(d,JSON.parse(raw));o.coins=Math.max(0,Math.min(1e6,Math.floor(Number(o.coins)||0)));return o}catch(e){return d}}
@@ -209,7 +214,7 @@ function quick(k,v){cfg[k]=v;startGame()}
 function board(){board0();addNav("lb")}
 async function boardOnline0(){await boardOnline0();addNav("lb")}
 
-function home(){LV=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
+function home(){LV=null;FIX=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
  const p=load(),x=xpInfo(p),pr=Math.round(cleared(p)/MAXLV*100),nc=notifCount(p),dc=p.day===today(),sf=p.spin!==today();
  const T6=[["diff","easy","t-easy","⚡",t('easy'),"Quiz"],["diff","medium","t-med","⭐",t('medium'),"Quiz"],["diff","hard","t-hard","🏆",t('hard'),"Quiz"],
   ["mode","teacher","t-tea","🎓",t('teacher'),"Mode"],["mode","battle","t-bat","⚔️",t('battle'),"Mode"],["mode","smart","t-ai","🤖",t('smartai'),"Mode"]];
@@ -222,6 +227,7 @@ function home(){LV=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
   <div class="pinfo"><div class="nm">${esc(pname()||"Player")}</div><div class="lv">🛡️ Level ${x.lv}</div><div class="xp"><div class="bar2"><i style="width:${x.cur/5}%"></i></div>${x.cur} / 500 XP</div></div>
   <div class="coinbox"><div class="n">🪙 ${p.coins}</div><div class="l">Coins</div><button class="plus" onclick="shop()">+</button></div></div>
  <div class="tiles">`+T6.map(a=>`<div class="tile ${a[2]}" onclick="quick('${a[0]}','${a[1]}')"><span class="ic">${a[3]}</span>${a[4]}<small>${a[5]}</small><span class="go">›</span></div>`).join("")+`</div>
+ <div class="tiles"><div class="tile big3 t-rep" onclick="report()"><span class="ic">📊</span>Smart Learning Report<small>Track Progress &amp; Find Weak Topics</small></div><div class="tile big3 t-mp" onclick="multi()"><span class="ic">👥</span>Multiplayer Battle<small>Challenge Friends</small></div><div class="tile big3 t-bm" onclick="bookmarks()"><span class="ic">🔖</span>Bookmark Questions<small>Save Favorite Questions</small></div></div>
  <div class="tiles">
   <div class="mini"><span class="ic">🎁</span>Daily Rewards<button ${dc?'disabled':''} onclick="daily()">${dc?'Claimed ✅':'Claim ›'}</button></div>
   <div class="mini"><span class="ic">🎰</span>Lucky Spin<button onclick="spin()">${sf?'Spin Now ›':(isKid()?'Tomorrow':'30 🪙 ›')}</button></div>
@@ -266,7 +272,8 @@ function profile(){const p=load(),x=xpInfo(p);
 async function startGame(){
  S={used:[],i:0,you:0,ai:0,right:0,streak:0,wrongStreak:0,level:cfg.diff==="smart"?(ageG()==="kid"?"easy":"medium"):cfg.diff,online:[],note:"",coins:0,bet:0};
  {const p=load();const b=Number(cfg.bet)||0;if(cfg.mode!=="teacher"&&b>0&&!isKid()&&p.coins>=b){p.coins-=b;save(p);S.bet=b}}
- if(cfg.online&&!isKid()&&cfg.cat!=="eng"&&cfg.cat!=="pic"&&cfg.cat!=="kids"){
+ if(FIX)S.fixed=chSet(FIX.seed);
+ if(cfg.online&&!isKid()&&!["eng","pic","kids","saved","mist"].includes(cfg.cat)){
   app.innerHTML=`<div class="card"><div class="nex">${avatar()}<div class="bubble">${t('loading')}</div></div></div>`;
   S.online=await fetchOnline();
   if(!S.online.length)S.note=t('offl');
@@ -307,8 +314,9 @@ function nextQ(){
  if(S.i>=ROUND)return result();
  let q=null;
  if(S.online.length){q=S.online.shift()}
+ else if(FIX&&S.fixed){const ix=S.fixed.shift();q=Q[ix];if(!q)return result();S.used.push(ix)}
  else{
-  let pool=Q.filter((x,ix)=>!S.used.includes(ix)&&(cfg.cat==="all"?(x.c!=="kids"||isKid()):x.c===cfg.cat));
+  let pool=Q.filter((x,ix)=>!S.used.includes(ix)&&poolOK(x));
   if(!pool.length)return result();
   let lv=pool.filter(x=>x.d===S.level);
   if(isKid()&&!lv.length){const nh=pool.filter(x=>x.d!=="hard");if(nh.length)lv=nh}
@@ -338,7 +346,7 @@ function render(){
 
 function answer(i){
  if(S.locked)return;S.locked=true;clearInterval(timerId);
- const q=S.q,ok=i===q.a;
+ const q=S.q,ok=i===q.a;recStat(q,ok);
  const btns=[...document.querySelectorAll(".opt")];
  btns.forEach((b,ix)=>{b.disabled=true;if(ix===q.a)b.classList.add("ok");else if(ix===i)b.classList.add("bad")});
  const pu=$("#pu");if(pu)pu.style.display="none";
@@ -351,7 +359,7 @@ function answer(i){
  const say=ok?pick(T[cfg.lang].ok1):(i===-1?t('time'):pick(T[cfg.lang].bad1));
  $("#say").textContent=say;
  $(".nex svg").outerHTML=avatar(ok?"happy":"sad");
- $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${aiTxt}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&(cfg.cat==="all"?(x.c!=="kids"||isKid()):x.c===cfg.cat)).length===0)?t('finish'):t('next')}</button>`;
+ $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${aiTxt}${bmBtn(q)}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&poolOK(x)).length===0)?t('finish'):t('next')}</button>`;
 }
 
 function result(){
@@ -376,6 +384,7 @@ function result(){
  <div class="exp">🪙 +${S.coins} ${c('earned')}${betMsg?' · '+betMsg:''} · ${c('total')}: ${p.coins}${lvMsg?'<br><b>'+lvMsg+'</b>':''}</div>
  <div class="lbl">${t('rep')}</div><div class="exp">${t('tip')}: ${tip}</div></div>${adBanner()}
  ${LV?((S.lvPass&&LV<MAXLV?`<button class="btn" onclick="startLevel(${LV+1})">Next Level ➜</button>`:'')+`<button class="btn ${S.lvPass&&LV<MAXLV?'sec':''}" onclick="startLevel(${LV})">🔁 Retry</button><button class="btn sec" onclick="levels()">🎯 Levels</button>`):`<button class="btn" onclick="startGame()">${t('again')}</button>`}<button class="btn sec" onclick="home()">${t('home')}</button>`;
+ if(FIX)chResult();
 }
 
 /* ========== SOUND, NAME, LEADERBOARD ========== */
@@ -554,7 +563,7 @@ function lvDiff(n){const g=ageG();if(g==="kid")return n<=15?"easy":"medium";if(g
 function setAge(g){try{localStorage.setItem("nex_age",g)}catch(e){}
  if(g==="kid"){cfg.bet="0";cfg.online=false;cfg.diff="easy";cfg.cat="kids"}else{cfg.diff="smart";if(cfg.cat==="kids")cfg.cat="all"}
  if(window.__adReset)window.__adReset();loadGA()}
-function pickAge(g){setAge(g);home()}
+function pickAge(g){setAge(g);home();checkCh()}
 function ageChips(){const A=[["kid","🧒 Kids 6–12"],["teen","🧑 Teens 13–17"],["adult","🧑‍🦱 Adults 18+"]];
  return `<div class="row">`+A.map(a=>`<div class="chip ${ageG()===a[0]?'on':''}" onclick="setAge('${a[0]}');settings()">${a[1]}</div>`).join("")+`</div>`}
 function ageScreen(){
@@ -570,7 +579,7 @@ function ageScreen(){
  <div class="row" style="justify-content:center">`+["hi","en","ne"].map(l=>`<div class="chip ${cfg.lang===l?'on':''}" onclick="cfg.lang='${l}';ageScreen()">${{hi:"हिन्दी",en:"English",ne:"नेपाली"}[l]}</div>`).join("")+`</div>`}
 
 /* ========== LEVELS ========== */
-let LV=null,CFG0=null;
+let LV=null,CFG0=null,FIX=null,PSET=null,PENDING_CH=null;
 const MAXLV=30;
 function lvNeed(n){return n>20?4:3}
 function levels(){const p=load();LV=null;
@@ -751,6 +760,56 @@ Q.push(
 );
 
 /* ========== COINS: Daily, Spin, Shop, Power-ups ========== */
+/* ========== SMART LEARNING REPORT / BOOKMARKS / FRIEND CHALLENGE ========== */
+function qkey(q){return q._k||(q._k=hsh(q.q.en+"|"+q.o.join("|")))}
+const CN={gk:"GK",sci:"Science",math:"Maths",eng:"English",pic:"Photo Quiz",kids:"Kids Fun",online:"Online (AI)"};
+function recStat(q,ok){try{const p=load();const k=q.c||"other";p.cs=p.cs||{};const o=p.cs[k]||{r:0,t:0};o.t++;if(ok)o.r++;p.cs[k]=o;
+ if(q.c!=="online"){const key=qkey(q);p.mist=(p.mist||[]).filter(x=>x!==key);if(!ok)p.mist.unshift(key);p.mist=p.mist.slice(0,40)}
+ save(p)}catch(e){}}
+function poolOK(x){if(cfg.cat==="saved"||cfg.cat==="mist")return !!PSET&&x.c!=="online"&&PSET.has(qkey(x));if(cfg.cat==="all")return x.c!=="kids"||isKid();return x.c===cfg.cat}
+function practice(c){const p=load();PSET=new Set(c==="saved"?(p.bm||[]):(c==="mist"?(p.mist||[]):[]));if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=null;ROUND=8;cfg.cat=c;cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="smart";startGame()}
+function report(){const p=load();const cs=p.cs||{};const order=["gk","sci","math","eng","pic","kids","online"];
+ const rows=order.filter(k=>cs[k]&&cs[k].t>0).map(k=>{const o=cs[k],a=Math.round(o.r/o.t*100),col=a>=70?"#22c55e":a>=40?"#fbbf24":"#ef4444";
+  return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:14px"><b>${CN[k]}</b><span>${o.r}/${o.t} · ${a}%</span></div><div style="height:10px;border-radius:6px;background:#1b2552;overflow:hidden"><i style="display:block;height:100%;width:${a}%;background:${col}"></i></div></div>`}).join("");
+ const weak=order.filter(k=>k!=="online"&&cs[k]&&cs[k].t>=3&&cs[k].r/cs[k].t<0.7).sort((a,b)=>cs[a].r/cs[a].t-cs[b].r/cs[b].t);
+ const strong=order.filter(k=>cs[k]&&cs[k].t>=3&&cs[k].r/cs[k].t>=0.8);
+ const acc=p.total?Math.round(p.right/p.total*100):0;
+ app.innerHTML=`<h1>📊 Smart Learning Report</h1>
+ <div class="card"><div class="score"><div><b>${p.games}</b>Games</div><div><b>${acc}%</b>${t('acc')}</div><div><b>${cleared(p)}/${MAXLV}</b>Levels</div></div></div>
+ <div class="card"><div class="lbl">Topic accuracy</div>${rows||`<div class="bubble">Play a few quizzes. Your topic report starts from now.</div>`}</div>
+ <div class="card"><div class="lbl">Weak topics</div>${weak.length?weak.map(k=>`<button class="opt" onclick="practice('${k}')">📉 ${CN[k]} · ${Math.round(cs[k].r/cs[k].t*100)}% — Practice ›</button>`).join(""):`<div class="bubble">${rows?"No weak topic. Keep playing! 💪":"Not enough data yet (answer 3+ questions in a topic)."}</div>`}${strong.length?`<div class="exp">💪 Strong: ${strong.map(k=>CN[k]).join(", ")}</div>`:''}</div>
+ ${(p.mist||[]).length?`<button class="btn" onclick="practice('mist')">🔁 Review my mistakes (${p.mist.length})</button>`:''}
+ <button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
+function bmHas(q){try{return (load().bm||[]).includes(qkey(q))}catch(e){return false}}
+function bmBtn(q){if(!q||q.c==="online")return "";return `<button class="btn sec" id="bmb" style="margin-top:8px" onclick="toggleBm()">${bmHas(q)?"★ Saved":"☆ Save question"}</button>`}
+function toggleBm(){const q=S.q;if(!q||q.c==="online")return;const p=load();p.bm=p.bm||[];const k=qkey(q);const i=p.bm.indexOf(k);if(i>=0)p.bm.splice(i,1);else{if(p.bm.length>=100)p.bm.pop();p.bm.unshift(k)}save(p);const b=$("#bmb");if(b)b.textContent=i>=0?"☆ Save question":"★ Saved"}
+function bookmarks(){const p=load();const set=new Set(p.bm||[]);const L=Q.filter(x=>x.c!=="online"&&set.has(qkey(x)));
+ app.innerHTML=`<h1>🔖 Bookmarks</h1><div class="card"><div class="tag">${L.length} saved · tap ☆ Save question after any answer</div></div>`+
+ (L.length?`<button class="btn" onclick="practice('saved')">▶ Practice saved questions</button>`:`<div class="card"><div class="bubble">No saved questions yet. After you answer a question, tap <b>☆ Save question</b>.</div></div>`)+
+ L.map(x=>`<div class="card">${x.em?`<div class="emo" style="font-size:44px">${x.em}</div>`:''}<div class="q">${esc(x.q[cfg.lang])}</div><div class="exp">✅ <b>${esc(x.o[x.a])}</b><br>${esc(x.e[cfg.lang])}</div><button class="btn sec" onclick="rmBm('${qkey(x)}')">🗑 Remove</button></div>`).join("")+
+ `<button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
+function rmBm(k){const p=load();p.bm=(p.bm||[]).filter(x=>x!==k);save(p);bookmarks()}
+function rng(seed){let h=seed>>>0;return()=>{h=(h+0x6D2B79F5)>>>0;let z=h;z=Math.imul(z^z>>>15,z|1);z^=z+Math.imul(z^z>>>7,z|61);return((z^z>>>14)>>>0)/4294967296}}
+function chSet(seed){const r=rng(seed),idx=Q.map((q,i)=>i),out=[];
+ for(const c of["gk","sci","math","eng","pic"]){const L=idx.filter(i=>Q[i].c===c&&Q[i].d!=="hard");if(L.length)out.push(L[Math.floor(r()*L.length)])}
+ return out}
+function multi(){if(isKid()){app.innerHTML=`<h1>⚔️ Multiplayer</h1><div class="card"><div class="bubble">🔒 Friend challenges are for ages 13+. Ask a parent to play together!</div></div><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home");return}
+ app.innerHTML=`<h1>⚔️ Multiplayer Battle</h1><div class="card"><div class="bubble">Challenge a friend: you play 5 questions, then send the link. Your friend plays the <b>same 5 questions</b>, and you both see who wins!</div></div><button class="btn" onclick="chNew()">⚔️ Create Challenge</button><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
+function chNew(){chStart({seed:1+Math.floor(Math.random()*999999),mode:"create",s:null,n:""})}
+function chStart(o){if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=o;ROUND=5;cfg.cat="all";cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="easy";startGame()}
+function chLink(seed,sc){const base=location.href.split("?")[0].split("#")[0];return base+"?ch="+seed+"&s="+sc+"&n="+encodeURIComponent((pname()||"Player").slice(0,14))}
+function chResult(){const me=S.right,card=document.createElement("div");card.className="card";let h="";
+ if(FIX.mode==="play"){const o=FIX.s,n=esc(FIX.n||"Friend");h=`<div class="big">${me} vs ${o}</div><div class="exp"><b>${me>o?"🎉 You beat "+n+"!":me===o?"🤝 Draw with "+n+"!":"😅 "+n+" wins this time"}</b></div><div class="exp">Send your score back:</div>`}
+ else h=`<div class="big">⚔️ ${me}/5</div><div class="exp">Send this challenge to a friend. They play the same 5 questions!</div>`;
+ const link=chLink(FIX.seed,me),tx={hi:`मैंने AI QUIZ BATTLE चैलेंज में ${me}/5 स्कोर किया! क्या तुम हरा सकते हो? 🔥`,en:`I scored ${me}/5 in an AI QUIZ BATTLE challenge! Can you beat me? 🔥`,ne:`मैले AI QUIZ BATTLE च्यालेन्जमा ${me}/5 स्कोर गरें! के तिमी हराउन सक्छौ? 🔥`}[cfg.lang]+" "+link;
+ h+=`<a class="btn" style="display:block;text-align:center;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(tx)}">📤 Share on WhatsApp</a><button class="btn sec" onclick="navigator.clipboard&&navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(link)}')).then(()=>{this.textContent='Copied ✅'})">📋 Copy link</button>`;
+ card.innerHTML=h;const f=app.querySelector("h1");if(f)f.after(card)}
+function readCh(){try{const q=new URLSearchParams(location.search);const seed=parseInt(q.get("ch"),10);if(!(seed>0&&seed<=999999))return;let sc=parseInt(q.get("s"),10);if(!(sc>=0&&sc<=5))sc=0;
+ const n=(q.get("n")||"").replace(/[^\p{L}\p{N} _-]/gu,"").slice(0,14);PENDING_CH={seed:seed,mode:"play",s:sc,n:n};
+ const u=new URL(location.href);["ch","s","n"].forEach(k=>u.searchParams.delete(k));history.replaceState(null,"",u.pathname+u.search+u.hash)}catch(e){}}
+function checkCh(){if(!PENDING_CH||!ageG()||isKid())return;const o=PENDING_CH;PENDING_CH=null;
+ app.innerHTML=`<h1>⚔️ Challenge!</h1><div class="card"><div class="big">${esc(o.n||"A friend")} scored ${o.s}/5</div><div class="bubble">Can you beat them? Play the same 5 questions.</div></div><button class="btn" onclick="chStart(${JSON.stringify(o).replace(/"/g,'&quot;')})">⚔️ Accept Challenge</button><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
+
 function today(d){return (d||new Date()).toLocaleDateString('en-CA')}
 function toast(m){home();const d=document.createElement("div");d.className="card";d.innerHTML="<div class='big' style='font-size:22px'>"+m+"</div>";app.prepend(d)}
 function daily(){const p=load();const td=today();if(p.day===td)return toast(c('claimed'));
@@ -804,7 +863,7 @@ function useTime(){if(!S||S.locked)return;const p=load();if(p.time<1)return;p.ti
   window.onRewardedAd(ok)}};
 }catch(e){}})();
 
-if(isKid())cfg.cat="kids";if(!ageG())ageScreen();else home();initRef();claimRefs(true);initAuth();loadGA();
+if(isKid())cfg.cat="kids";readCh();if(!ageG())ageScreen();else{home();checkCh()}initRef();claimRefs(true);initAuth();loadGA();
 </script>
 </body>
 </html>

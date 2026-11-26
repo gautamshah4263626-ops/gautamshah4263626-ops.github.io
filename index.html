@@ -104,6 +104,11 @@ small{color:var(--mut)}
 .mini .ic{font-size:36px}
 .mini button{border:0;border-radius:14px;padding:7px 10px;background:linear-gradient(#ffd54a,#ffb300);color:#3a2400;font-weight:800;font-size:14px;cursor:pointer}
 .mini button:disabled{opacity:.6}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.si{background:linear-gradient(160deg,#0f2a6b,#091233);border:1px solid #2f5fd0;border-radius:16px;padding:12px 8px;text-align:center}
+.si .ic{font-size:38px}.si b{display:block;font-size:14px;margin-top:2px}.si small{display:block;font-size:11px;opacity:.8;min-height:30px;margin:3px 0}
+.buy{border:0;border-radius:12px;padding:8px 14px;font-weight:800;color:#fff;background:linear-gradient(90deg,#2b6cff,#38d6ff);width:100%}
+.buy.eq{background:#15803d}
 .tile.big3{font-size:14px;line-height:1.15;min-height:128px;padding:14px 6px 12px}
 .tile.big3 small{font-size:11px;font-weight:500;margin-top:5px;opacity:.85}
 .t-rep{background:linear-gradient(160deg,#0b2a6b,#08143a);border-color:#38d6ff99;color:#ffd54a}
@@ -185,7 +190,7 @@ let ROUND=8;const TIME=15;
 function t(k){return T[cfg.lang][k]}
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function hsh(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
-function load(){const d={games:0,best:0,total:0,right:0,coins:50,day:"",dstreak:0,spin:"",fifty:1,time:1,skin:"blue",skins:["blue"],lvl:1,stars:{},refc:0,refd:0,bm:[],mist:[],cs:{}};
+function load(){const d={games:0,best:0,total:0,right:0,coins:50,day:"",dstreak:0,spin:"",fifty:1,time:1,skin:"blue",skins:["blue"],lvl:1,stars:{},refc:0,refd:0,bm:[],mist:[],cs:{},hint:0,skip:0,life:0,shield:0,own:[],av:"",fr:false};
  try{const raw=localStorage.getItem("nex_prog");if(!raw)return d;
   const sig=localStorage.getItem("nex_sig");if(sig&&sig!==hsh(raw+"nexQ#7"))return d; /* edited by hand -> reset */
   const o=Object.assign(d,JSON.parse(raw));o.coins=Math.max(0,Math.min(1e6,Math.floor(Number(o.coins)||0)));return o}catch(e){return d}}
@@ -255,7 +260,7 @@ function settings(){
 function resetAll(){if(confirm("Reset all progress, coins and photo?")){["nex_prog","nex_sig","nex_lb","nex_photo","nex_name","nex_pid"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});home()}}
 
 function achievements(){const p=load();
- const A=[["🥇","First game",p.games>=1],["🎯","10 correct answers",p.right>=10],["🧠","100 correct answers",p.right>=100],["🚀","Reach Level 5",p.lvl>=5],["🏆","Clear 10 levels",cleared(p)>=10],["👑","Clear all 30 levels",cleared(p)>=30],["⭐","3 stars on a level",Object.values(p.stars).some(v=>v>=3)],["💰","Own 500 coins",p.coins>=500],["🔥","3-day streak",p.dstreak>=3],["🎁","Invite a friend",p.refc>=1],["📸","Add your photo",!!photo()]];
+ const A=[["🥇","First game",p.games>=1],["🎯","10 correct answers",p.right>=10],["🧠","100 correct answers",p.right>=100],["🚀","Reach Level 5",p.lvl>=5],["🏆","Clear 10 levels",cleared(p)>=10],["👑","Clear all 100 levels",cleared(p)>=100],["⭐","3 stars on a level",Object.values(p.stars).some(v=>v>=3)],["💰","Own 500 coins",p.coins>=500],["🔥","3-day streak",p.dstreak>=3],["🎁","Invite a friend",p.refc>=1],["📸","Add your photo",!!photo()]];
  const n=A.filter(a=>a[2]).length;
  app.innerHTML=`<h1>🏅 Achievements</h1><div class="tag">${n}/${A.length}</div><div class="card" style="text-align:center">`+A.map(a=>`<div class="badge ${a[2]?'on':''}"><span>${a[2]?a[0]:'🔒'}</span>${a[1]}</div>`).join("")+`</div>`;
  addNav("ach")}
@@ -340,26 +345,26 @@ function render(){
  <div class="bar"><i id="tb"></i></div>
  <div class="score"><div>${phHTML(34)}<b>${S.you}</b>${t('you')}</div>${cfg.mode!=="teacher"?`<div><b>${S.ai}</b>${t('ai')}</div>`:''}<div><b>${S.streak}</b>🔥</div></div>
  <div class="card"><div class="nex">${avatar()}<div class="bubble" id="say">${S.note||msg}</div></div></div>
- <div class="card">${q.img?`<img class="pic" src="${q.img}" alt="">`:''}${q.em?`<div class="emo">${q.em}</div>`:''}<div class="q">${q.q[cfg.lang]}</div><div id="opts">${q.o.map((o,i)=>`<button class="opt" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join("")}</div><div id="pu" class="row" style="margin-top:6px"><div class="chip" onclick="useFifty()">✂️ 50-50 (${load().fifty})</div><div class="chip" onclick="useTime()">⏱ +5s (${load().time})</div></div><div id="fb"></div></div>`;
+ <div class="card">${q.img?`<img class="pic" src="${q.img}" alt="">`:''}${q.em?`<div class="emo">${q.em}</div>`:''}<div class="q">${q.q[cfg.lang]}</div><div id="opts">${q.o.map((o,i)=>`<button class="opt" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join("")}</div><div id="pu" class="row" style="margin-top:6px">${puHTML()}</div><div id="fb"></div></div>`;
  S.note="";
 }
 
 function answer(i){
  if(S.locked)return;S.locked=true;clearInterval(timerId);
- const q=S.q,ok=i===q.a;recStat(q,ok);
+ const q=S.q,ok=i===q.a;recStat(q,ok);let lifeMsg="";
  const btns=[...document.querySelectorAll(".opt")];
  btns.forEach((b,ix)=>{b.disabled=true;if(ix===q.a)b.classList.add("ok");else if(ix===i)b.classList.add("bad")});
  const pu=$("#pu");if(pu)pu.style.display="none";
  snd(i===q.a?"ok":"bad");
  let gain=0;
- if(ok){S.you++;S.right++;S.streak++;S.wrongStreak=0;gain=10+(q.d==="hard"?5:0)+(S.streak>=3?5:0);const pp=load();pp.coins+=gain;save(pp);S.coins+=gain;const cn=$("#cn");if(cn)cn.textContent=pp.coins}else{S.streak=0;S.wrongStreak++}
+ if(ok){S.you++;S.right++;S.streak++;S.wrongStreak=0;gain=10+(q.d==="hard"?5:0)+(S.streak>=3?5:0);const pp=load();pp.coins+=gain;save(pp);S.coins+=gain;const cn=$("#cn");if(cn)cn.textContent=pp.coins}else{if(S.lifeOn){S.lifeOn=false;S.right++;S.you++;lifeMsg="❤️ Extra Life used — counted as correct!"}if(S.shieldOn){S.shieldOn=false;lifeMsg+=(lifeMsg?" ":"")+"🛡️ Shield protected your streak!"}else if(!lifeMsg.includes("Life"))S.streak=0;else S.streak=0;S.wrongStreak++}
  let aiTxt="";
  if(S.aiPick!==null){const aiOk=S.aiPick===q.a;if(aiOk)S.ai++;aiTxt=`<div style="margin-top:8px;font-size:13px;color:var(--mut)">🤖 ${t('gotit')}: ${String.fromCharCode(65+S.aiPick)}. ${q.o[S.aiPick]} ${aiOk?'✅':'❌'}</div>`}
  if(cfg.diff==="smart"){const L=["easy","medium","hard"];let k=L.indexOf(S.level);k=ok?Math.min(isKid()?1:2,k+1):Math.max(0,k-1);S.level=L[k]}
  const say=ok?pick(T[cfg.lang].ok1):(i===-1?t('time'):pick(T[cfg.lang].bad1));
- $("#say").textContent=say;
+ $("#say").textContent=say+((ok&&(load().own||[]).includes("emoji"))?" "+pick(["😎","🤩","🔥","🥳","😍","🚀"]):"");
  $(".nex svg").outerHTML=avatar(ok?"happy":"sad");
- $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${aiTxt}${bmBtn(q)}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&poolOK(x)).length===0)?t('finish'):t('next')}</button>`;
+ $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${lifeMsg?`<div class="exp"><b>${lifeMsg}</b></div>`:''}${aiTxt}${bmBtn(q)}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&poolOK(x)).length===0)?t('finish'):t('next')}</button>`;
 }
 
 function result(){
@@ -580,11 +585,11 @@ function ageScreen(){
 
 /* ========== LEVELS ========== */
 let LV=null,CFG0=null,FIX=null,PSET=null,PENDING_CH=null;
-const MAXLV=30;
+const MAXLV=100;
 function lvNeed(n){return n>20?4:3}
 function levels(){const p=load();LV=null;
  if(p.stars[p.lvl]>0&&p.lvl<MAXLV){p.lvl++;save(p)}
- const T=[["🌱 Beginner (1–10)",1,10],["⚡ Pro (11–20)",11,20],["👑 Master (21–30)",21,30]];
+ const T=[["🌱 Beginner (1–10)",1,10],["⚡ Pro (11–20)",11,20],["👑 Master (21–30)",21,30],["🔥 Expert (31–50)",31,50],["💎 Champion (51–75)",51,75],["🏆 Legend (76–100)",76,100]];
  app.innerHTML=`<h1>🎯 Levels</h1><div class="card"><div class="tag">Harder with every level · ${cleared(p)}/${MAXLV} cleared<br>5 questions · 3/5 = Pass ✅ (Master levels: 4/5) · ⭐⭐⭐ = 5/5</div></div>`+
  T.map(t=>`<div class="card"><div class="lbl">${t[0]}</div><div class="row">`+Array.from({length:t[2]-t[1]+1},(_,i)=>{const n=t[1]+i,lock=n>p.lvl,st=p.stars[n]||0;
   return `<div class="chip ${lock?'':'on'}" style="width:calc(20% - 8px);text-align:center;padding:12px 0;${lock?'opacity:.45':''}" onclick="${lock?'':'startLevel('+n+')'}">${lock?'🔒':n}<br><small>${lock?'&nbsp;':'⭐'.repeat(st)+'☆'.repeat(3-st)}</small></div>`}).join("")+`</div></div>`).join("")+
@@ -688,7 +693,7 @@ const C2={
 };
 function c2(k){return C2[cfg.lang][k]}
 function photo(){try{return localStorage.getItem("nex_photo")||""}catch(e){return""}}
-function phHTML(sz){const p=photo();const st=sz?`style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.5)}px"`:'';return p?`<img class="ph" ${st} src="${p}" alt="">`:`<div class="ph" ${st}>🧑</div>`}
+function phHTML(sz){const q0=load(),p=photo();const fr=q0.fr?"box-shadow:0 0 0 3px #22d3ee,0 0 16px 4px #a78bfa;":"";const st=`style="${sz?`width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.5)}px;`:''}${fr}"`;return p?`<img class="ph" ${st} src="${p}" alt="">`:`<div class="ph" ${st}>${q0.av||'🧑'}</div>`}
 function upPhoto(inp){const f=inp.files&&inp.files[0];if(!f)return;const r=new FileReader();
  r.onload=e=>{const im=new Image();im.onload=()=>{const cv=document.createElement("canvas");cv.width=cv.height=160;const x=cv.getContext("2d");const s=Math.min(im.width,im.height);
   x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,160,160);try{localStorage.setItem("nex_photo",cv.toDataURL("image/jpeg",.8))}catch(err){}home()};im.src=e.target.result};r.readAsDataURL(f)}
@@ -746,6 +751,105 @@ K("easy","⛵","Which vehicle moves on water?|कौन-सा वाहन प�
 K("medium","🏔️","Which is the tallest mountain in the world?|दुनिया का सबसे ऊँचा पहाड़ कौन-सा है?|संसारको सबैभन्दा अग्लो हिमाल कुन हो?","Mount Everest;K2;Annapurna;Mount Fuji",0,"Mount Everest (Sagarmatha) is in Nepal.|एवरेस्ट (सगरमाथा) नेपाल में है।|सगरमाथा (एभरेस्ट) नेपालमा छ।");
 K("medium","🕐","How many hours are there in one day?|एक दिन में कितने घंटे होते हैं?|एक दिनमा कति घण्टा हुन्छन्?","12;24;30;60",1,"One day has 24 hours.|एक दिन में 24 घंटे होते हैं।|एक दिनमा २४ घण्टा हुन्छन्।");
 K("easy","📚","What do we read to learn new things?|नई बातें सीखने के लिए हम क्या पढ़ते हैं?|नयाँ कुरा सिक्न हामी के पढ्छौं?","Shoe;Book;Stone;Ball",1,"We learn new things from books.|हम किताबों से नई बातें सीखते हैं।|हामी किताबबाट नयाँ कुरा सिक्छौं।");
+
+/* ===== BIG QUESTION PACK (generated at load, deterministic) ===== */
+(function(){
+const DK=new Set(),R=rng(20261126),ri=(a,b)=>a+Math.floor(R()*(b-a+1)),pk=a=>a[Math.floor(R()*a.length)];
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function mk(c,d,q,right,wr,e,em){right=String(right);const o=[right];for(const w of wr){const s=String(w);if(s&&!o.includes(s)&&s.indexOf(";")<0)o.push(s);if(o.length>=4)break}
+ if(o.length<4)return;const dk=q.split("|")[0]+"#"+(em||"");if(DK.has(dk))return;DK.add(dk);const f=sh(o);A(c,d,q,f.join(";"),f.indexOf(right),e);if(em)Q[Q.length-1].em=em}
+function near(n,lo){const s=new Set();[1,-1,2,-2,10,-10,3,-3,5,-5,100,-100].forEach(k=>{const v=n+k;if(v!==n&&(lo===undefined||v>=lo))s.add(v)});return sh([...s])}
+const by=(i,n)=>i<n/3?"easy":i<2*n/3?"medium":"hard";
+const T3=(en,hi,ne)=>en+"|"+hi+"|"+ne;
+/* ---- MATH ---- */
+const mq=(ex)=>T3(`What is ${ex}?`,`${ex} कितना होता है?`,`${ex} कति हुन्छ?`);
+for(let i=0;i<30;i++){const a=ri(10,99),b=ri(10,99);mk("math","easy",mq(a+" + "+b),a+b,near(a+b),T3(`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`))}
+for(let i=0;i<25;i++){const a=ri(50,99),b=ri(10,49);mk("math","easy",mq(a+" − "+b),a-b,near(a-b,0),T3(`${a} − ${b} = ${a-b}`,`${a} − ${b} = ${a-b}`,`${a} − ${b} = ${a-b}`))}
+for(let i=0;i<25;i++){const a=ri(100,999),b=ri(100,999);mk("math","medium",mq(a+" + "+b),a+b,near(a+b),T3(`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`))}
+for(let i=0;i<20;i++){const a=ri(500,999),b=ri(100,499);mk("math","medium",mq(a+" − "+b),a-b,near(a-b,0),T3(`${a} − ${b} = ${a-b}`,`${a} − ${b} = ${a-b}`,`${a} − ${b} = ${a-b}`))}
+for(let i=0;i<15;i++){const a=ri(1000,9999),b=ri(1000,9999);mk("math","hard",mq(a+" + "+b),a+b,near(a+b),T3(`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`))}
+for(let i=0;i<40;i++){const a=ri(2,12),b=ri(2,12);mk("math","easy",mq(a+" × "+b),a*b,[a*b+a,a*b-a,a*b+b,a*b-b,a*b+1],T3(`${a} × ${b} = ${a*b}`,`${a} × ${b} = ${a*b}`,`${a} × ${b} = ${a*b}`))}
+for(let i=0;i<30;i++){const a=ri(12,99),b=ri(3,9);mk("math","medium",mq(a+" × "+b),a*b,[a*b+b,a*b-b,a*b+10,a*b-10,a*b+a],T3(`${a} × ${b} = ${a*b}`,`${a} × ${b} = ${a*b}`,`${a} × ${b} = ${a*b}`))}
+for(let i=0;i<20;i++){const a=ri(12,49),b=ri(11,29);mk("math","hard",mq(a+" × "+b),a*b,[a*b+a,a*b-b,a*b+10,a*b-10,a*b+b],T3(`${a} × ${b} = ${a*b}`,`${a} × ${b} = ${a*b}`,`${a} × ${b} = ${a*b}`))}
+for(let i=0;i<30;i++){const b=ri(2,12),r=ri(2,12),a=b*r;mk("math","easy",mq(a+" ÷ "+b),r,near(r,1),T3(`${a} ÷ ${b} = ${r}`,`${a} ÷ ${b} = ${r}`,`${a} ÷ ${b} = ${r}`))}
+for(let i=0;i<20;i++){const b=ri(11,25),r=ri(11,40),a=b*r;mk("math","hard",mq(a+" ÷ "+b),r,near(r,1),T3(`${a} ÷ ${b} = ${r}`,`${a} ÷ ${b} = ${r}`,`${a} ÷ ${b} = ${r}`))}
+for(let n=2;n<=25;n++)mk("math",n<=10?"easy":n<=16?"medium":"hard",T3(`What is ${n}² (${n} squared)?`,`${n}² (${n} का वर्ग) कितना होता है?`,`${n}² (${n} को वर्ग) कति हुन्छ?`),n*n,[n*n+n,n*n-n,n*n+2*n,n*n-1,(n+1)*(n+1)],T3(`${n} × ${n} = ${n*n}`,`${n} × ${n} = ${n*n}`,`${n} × ${n} = ${n*n}`));
+for(let n=2;n<=20;n++)mk("math",n<=8?"medium":"hard",T3(`What is the square root of ${n*n}?`,`${n*n} का वर्गमूल क्या है?`,`${n*n} को वर्गमूल के हो?`),n,near(n,1),T3(`${n} × ${n} = ${n*n}, so √${n*n} = ${n}`,`${n} × ${n} = ${n*n}, इसलिए √${n*n} = ${n}`,`${n} × ${n} = ${n*n}, त्यसैले √${n*n} = ${n}`));
+for(let i=0;i<30;i++){const p=pk([10,20,25,50,5,15,30,40]),b=pk([40,60,80,100,120,200,240,300,400,500]);const r=p*b/100;if(r!==Math.floor(r))continue;mk("math",p%10===0||p===25||p===50?"medium":"hard",T3(`What is ${p}% of ${b}?`,`${b} का ${p}% कितना होता है?`,`${b} को ${p}% कति हुन्छ?`),r,near(r,1),T3(`${p}% of ${b} = ${b} × ${p} ÷ 100 = ${r}`,`${b} का ${p}% = ${b} × ${p} ÷ 100 = ${r}`,`${b} को ${p}% = ${b} × ${p} ÷ 100 = ${r}`))}
+for(let i=0;i<30;i++){const x=ri(2,30),b=ri(2,30);mk("math","easy",T3(`If x + ${b} = ${x+b}, what is x?`,`अगर x + ${b} = ${x+b} है, तो x कितना है?`,`यदि x + ${b} = ${x+b} हो भने x कति हो?`),x,near(x,0),T3(`x = ${x+b} − ${b} = ${x}`,`x = ${x+b} − ${b} = ${x}`,`x = ${x+b} − ${b} = ${x}`))}
+for(let i=0;i<30;i++){const x=ri(2,15),m=ri(2,9),b=ri(1,20);mk("math",i<15?"medium":"hard",T3(`If ${m}x + ${b} = ${m*x+b}, what is x?`,`अगर ${m}x + ${b} = ${m*x+b} है, तो x कितना है?`,`यदि ${m}x + ${b} = ${m*x+b} हो भने x कति हो?`),x,near(x,0),T3(`${m}x = ${m*x}, so x = ${x}`,`${m}x = ${m*x}, इसलिए x = ${x}`,`${m}x = ${m*x}, त्यसैले x = ${x}`))}
+for(let i=0;i<20;i++){const l=ri(3,20),w=ri(2,l-1);mk("math","easy",T3(`A rectangle is ${l} cm long and ${w} cm wide. What is its area (cm²)?`,`एक आयत ${l} सेमी लंबा और ${w} सेमी चौड़ा है। उसका क्षेत्रफल (सेमी²) कितना है?`,`एक आयत ${l} सेमी लामो र ${w} सेमी चौडा छ। यसको क्षेत्रफल (सेमी²) कति हो?`),l*w,near(l*w,1),T3(`Area = ${l} × ${w} = ${l*w}`,`क्षेत्रफल = ${l} × ${w} = ${l*w}`,`क्षेत्रफल = ${l} × ${w} = ${l*w}`));
+ mk("math","medium",T3(`A rectangle is ${l} cm long and ${w} cm wide. What is its perimeter (cm)?`,`एक आयत ${l} सेमी लंबा और ${w} सेमी चौड़ा है। उसका परिमाप (सेमी) कितना है?`,`एक आयत ${l} सेमी लामो र ${w} सेमी चौडा छ। यसको परिमिति (सेमी) कति हो?`),2*(l+w),near(2*(l+w),1),T3(`Perimeter = 2 × (${l} + ${w}) = ${2*(l+w)}`,`परिमाप = 2 × (${l} + ${w}) = ${2*(l+w)}`,`परिमिति = 2 × (${l} + ${w}) = ${2*(l+w)}`))}
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+for(let i=0;i<24;i++){const g=ri(2,9),a=g*ri(2,9),b=g*ri(2,9);if(a===b)continue;const h=gcd(a,b),l=a*b/h;
+ mk("math","medium",T3(`What is the HCF of ${a} and ${b}?`,`${a} और ${b} का HCF (महत्तम समापवर्तक) क्या है?`,`${a} र ${b} को HCF (महत्तम समापवर्तक) के हो?`),h,near(h,1),T3(`The greatest number dividing both ${a} and ${b} is ${h}.`,`${a} और ${b} दोनों को भाग देने वाली सबसे बड़ी संख्या ${h} है।`,`${a} र ${b} दुवैलाई भाग गर्ने सबैभन्दा ठूलो संख्या ${h} हो।`));
+ mk("math","hard",T3(`What is the LCM of ${a} and ${b}?`,`${a} और ${b} का LCM (लघुत्तम समापवर्त्य) क्या है?`,`${a} र ${b} को LCM (लघुत्तम समापवर्त्य) के हो?`),l,[l+h,l-h,l*2,a*b===l?l+a:a*b,l+b],T3(`LCM = ${a} × ${b} ÷ ${h} = ${l}`,`LCM = ${a} × ${b} ÷ ${h} = ${l}`,`LCM = ${a} × ${b} ÷ ${h} = ${l}`))}
+for(let i=0;i<30;i++){const a=ri(1,20),d=ri(2,9),s=[0,1,2,3].map(k=>a+d*k),nx=a+d*4;mk("math",i<15?"easy":"medium",T3(`Next number: ${s.join(", ")}, ?`,`अगला अंक: ${s.join(", ")}, ?`,`अर्को संख्या: ${s.join(", ")}, ?`),nx,near(nx,0),T3(`Add ${d} each time → ${nx}`,`हर बार ${d} जोड़ें → ${nx}`,`हरेक पटक ${d} जोड्नुहोस् → ${nx}`))}
+for(let i=0;i<15;i++){const a=ri(1,4),r=ri(2,3),s=[0,1,2,3].map(k=>a*Math.pow(r,k)),nx=a*Math.pow(r,4);mk("math","hard",T3(`Next number: ${s.join(", ")}, ?`,`अगला अंक: ${s.join(", ")}, ?`,`अर्को संख्या: ${s.join(", ")}, ?`),nx,near(nx,0),T3(`Multiply by ${r} each time → ${nx}`,`हर बार ${r} से गुणा करें → ${nx}`,`हरेक पटक ${r} ले गुणा गर्नुहोस् → ${nx}`))}
+/* ---- KIDS counting ---- */
+const KE=["🍎","⭐","🐶","🎈","🚗","🐟","🌸","⚽","🐱","🍌"];
+for(let i=0;i<45;i++){const e=pk(KE),n=ri(1,9);mk("kids",n<=5?"easy":"medium",T3("How many are there?","यहाँ कितने हैं?","यहाँ कति वटा छन्?"),n,near(n,1),T3(`There are ${n}.`,`यहाँ ${n} हैं।`,`यहाँ ${n} वटा छन्।`),e.repeat(n))}
+for(let i=0;i<25;i++){const e=pk(KE),a=ri(1,5),b=ri(1,5);mk("kids","easy",T3("How many in all?","कुल कितने हैं?","जम्मा कति वटा छन्?"),a+b,near(a+b,1),T3(`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`,`${a} + ${b} = ${a+b}`),e.repeat(a)+" ➕ "+e.repeat(b))}
+/* ---- WORLD GK ---- */
+const CAP=[["France","Paris","FR"],["Germany","Berlin","DE"],["Italy","Rome","IT"],["Spain","Madrid","ES"],["United Kingdom","London","GB"],["India","New Delhi","IN"],["Nepal","Kathmandu","NP"],["China","Beijing","CN"],["Japan","Tokyo","JP"],["Australia","Canberra","AU"],["Canada","Ottawa","CA"],["United States","Washington D.C.","US"],["Russia","Moscow","RU"],["Brazil","Brasilia","BR"],["Egypt","Cairo","EG"],["Pakistan","Islamabad","PK"],["Bangladesh","Dhaka","BD"],["Bhutan","Thimphu","BT"],["Afghanistan","Kabul","AF"],["Thailand","Bangkok","TH"],["South Korea","Seoul","KR"],["Indonesia","Jakarta","ID"],["Turkey","Ankara","TR"],["Saudi Arabia","Riyadh","SA"],["Mexico","Mexico City","MX"],
+["Portugal","Lisbon","PT"],["Ireland","Dublin","IE"],["Netherlands","Amsterdam","NL"],["Belgium","Brussels","BE"],["Switzerland","Bern","CH"],["Austria","Vienna","AT"],["Greece","Athens","GR"],["Sweden","Stockholm","SE"],["Norway","Oslo","NO"],["Denmark","Copenhagen","DK"],["Finland","Helsinki","FI"],["Poland","Warsaw","PL"],["Ukraine","Kyiv","UA"],["Iran","Tehran","IR"],["Iraq","Baghdad","IQ"],["United Arab Emirates","Abu Dhabi","AE"],["Qatar","Doha","QA"],["Vietnam","Hanoi","VN"],["Malaysia","Kuala Lumpur","MY"],["Philippines","Manila","PH"],["New Zealand","Wellington","NZ"],["Argentina","Buenos Aires","AR"],["Chile","Santiago","CL"],["Peru","Lima","PE"],["Colombia","Bogota","CO"],["Cuba","Havana","CU"],["Kenya","Nairobi","KE"],["Nigeria","Abuja","NG"],["South Africa","Pretoria","ZA"],["Morocco","Rabat","MA"],["Ethiopia","Addis Ababa","ET"],
+["Maldives","Male","MV"],["Myanmar","Naypyidaw","MM"],["Cambodia","Phnom Penh","KH"],["Laos","Vientiane","LA"],["Mongolia","Ulaanbaatar","MN"],["North Korea","Pyongyang","KP"],["Jordan","Amman","JO"],["Lebanon","Beirut","LB"],["Syria","Damascus","SY"],["Kuwait","Kuwait City","KW"],["Oman","Muscat","OM"],["Iceland","Reykjavik","IS"],["Croatia","Zagreb","HR"],["Serbia","Belgrade","RS"],["Bulgaria","Sofia","BG"],["Romania","Bucharest","RO"],["Hungary","Budapest","HU"],["Czechia","Prague","CZ"],["Slovakia","Bratislava","SK"],["Slovenia","Ljubljana","SI"],["Estonia","Tallinn","EE"],["Latvia","Riga","LV"],["Lithuania","Vilnius","LT"],["Belarus","Minsk","BY"],["Kazakhstan","Astana","KZ"],["Uzbekistan","Tashkent","UZ"],["Jamaica","Kingston","JM"],["Costa Rica","San Jose","CR"],["Panama","Panama City","PA"],["Ecuador","Quito","EC"],["Uruguay","Montevideo","UY"],["Paraguay","Asuncion","PY"],["Venezuela","Caracas","VE"],["Algeria","Algiers","DZ"],["Tunisia","Tunis","TN"],["Libya","Tripoli","LY"],["Sudan","Khartoum","SD"],["Tanzania","Dodoma","TZ"],["Uganda","Kampala","UG"],["Ghana","Accra","GH"],["Senegal","Dakar","SN"],["Zimbabwe","Harare","ZW"],["Zambia","Lusaka","ZM"],["Angola","Luanda","AO"],["Madagascar","Antananarivo","MG"],["Azerbaijan","Baku","AZ"],["Armenia","Yerevan","AM"],["Georgia","Tbilisi","GE"]];
+const flag=c=>String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0)));
+CAP.forEach((x,i)=>{const d=by(i,CAP.length),o=CAP.filter(y=>y!==x);
+ mk("gk",d,T3(`What is the capital of ${x[0]}?`,`${x[0]} की राजधानी क्या है?`,`${x[0]} को राजधानी के हो?`),x[1],sh(o).map(y=>y[1]),T3(`The capital of ${x[0]} is ${x[1]}.`,`${x[0]} की राजधानी ${x[1]} है।`,`${x[0]} को राजधानी ${x[1]} हो।`));
+ mk("pic",d,T3("Which country's flag is this?","यह किस देश का झंडा है?","यो कुन देशको झण्डा हो?"),x[0],sh(o).map(y=>y[0]),T3(`This is the flag of ${x[0]}.`,`यह ${x[0]} का झंडा है।`,`यो ${x[0]} को झण्डा हो।`),flag(x[2]))});
+const CUR=[["Japan","Yen"],["United Kingdom","Pound Sterling"],["United States","US Dollar"],["India","Indian Rupee"],["Nepal","Nepalese Rupee"],["China","Yuan"],["Russia","Ruble"],["Switzerland","Swiss Franc"],["Brazil","Real"],["Mexico","Mexican Peso"],["South Korea","Won"],["Turkey","Lira"],["Thailand","Baht"],["Saudi Arabia","Riyal"],["United Arab Emirates","Dirham"],["Bangladesh","Taka"],["Malaysia","Ringgit"],["Indonesia","Rupiah"],["Vietnam","Dong"],["South Africa","Rand"],["Poland","Zloty"],["Sweden","Swedish Krona"],["Norway","Norwegian Krone"],["Czechia","Koruna"],["Hungary","Forint"],["Nigeria","Naira"],["Philippines","Philippine Peso"],["Cambodia","Riel"],["Laos","Kip"],["Myanmar","Kyat"],["Bhutan","Ngultrum"],["Maldives","Rufiyaa"],["Kuwait","Kuwaiti Dinar"],["Germany","Euro"],["Pakistan","Pakistani Rupee"],["Sri Lanka","Sri Lankan Rupee"],["Egypt","Egyptian Pound"],["Israel","Shekel"],["Denmark","Danish Krone"],["Kenya","Kenyan Shilling"]];
+CUR.forEach((x,i)=>mk("gk",by(i,CUR.length),T3(`What is the currency of ${x[0]}?`,`${x[0]} की मुद्रा क्या है?`,`${x[0]} को मुद्रा के हो?`),x[1],sh(CUR.filter(y=>y!==x)).map(y=>y[1]),T3(`${x[0]} uses the ${x[1]}.`,`${x[0]} की मुद्रा ${x[1]} है।`,`${x[0]} को मुद्रा ${x[1]} हो।`)));
+/* ---- ELEMENTS ---- */
+const EL=[["Hydrogen","H",1],["Helium","He",2],["Carbon","C",6],["Nitrogen","N",7],["Oxygen","O",8],["Sodium","Na",11],["Iron","Fe",26],["Gold","Au",79],["Silver","Ag",47],["Calcium","Ca",20],["Potassium","K",19],["Copper","Cu",29],["Lead","Pb",82],["Mercury","Hg",80],["Zinc","Zn",30],["Tin","Sn",50],["Chlorine","Cl",17],["Neon","Ne",10],["Magnesium","Mg",12],["Aluminium","Al",13],["Silicon","Si",14],["Sulfur","S",16],["Phosphorus","P",15],["Lithium","Li",3],["Uranium","U",92],["Nickel","Ni",28],["Iodine","I",53],["Argon","Ar",18],["Fluorine","F",9],["Platinum","Pt",78]];
+EL.forEach((x,i)=>{const d=by(i,EL.length);
+ mk("sci",d,T3(`What is the chemical symbol of ${x[0]}?`,`${x[0]} का रासायनिक प्रतीक क्या है?`,`${x[0]} को रासायनिक चिह्न के हो?`),x[1],sh(EL.filter(y=>y!==x)).map(y=>y[1]),T3(`The symbol of ${x[0]} is ${x[1]}.`,`${x[0]} का प्रतीक ${x[1]} है।`,`${x[0]} को चिह्न ${x[1]} हो।`));
+ mk("sci",d==="easy"?"medium":"hard",T3(`What is the atomic number of ${x[0]}?`,`${x[0]} का परमाणु क्रमांक क्या है?`,`${x[0]} को परमाणु संख्या कति हो?`),x[2],near(x[2],1),T3(`${x[0]} has atomic number ${x[2]}.`,`${x[0]} का परमाणु क्रमांक ${x[2]} है।`,`${x[0]} को परमाणु संख्या ${x[2]} हो।`))});
+/* ---- ENGLISH ---- */
+const SY=[["big","large"],["small","tiny"],["happy","glad"],["fast","quick"],["begin","start"],["end","finish"],["buy","purchase"],["angry","furious"],["error","mistake"],["huge","enormous"],["brave","courageous"],["rich","wealthy"],["pretty","beautiful"],["shut","close"],["tired","weary"],["difficult","hard"],["silent","quiet"],["enemy","foe"],["sick","ill"],["ancient","old"],["assist","help"],["rapid","swift"],["allow","permit"],["hide","conceal"],["choose","select"],["destroy","demolish"],["famous","renowned"],["honest","truthful"],["lazy","idle"],["polite","courteous"],["certain","sure"],["scared","afraid"],["mend","repair"],["gift","present"],["depart","leave"],["reveal","disclose"],["vital","essential"],["fragile","delicate"],["obstinate","stubborn"],["diligent","hardworking"],["frugal","thrifty"],["candid","frank"],["reluctant","unwilling"],["ambiguous","unclear"],["meager","scanty"],["mundane","ordinary"],["lucid","clear"],["tranquil","calm"],["eloquent","articulate"],["ephemeral","short-lived"],["pragmatic","practical"],["verbose","wordy"],["zealous","enthusiastic"],["arduous","strenuous"],["abundant","plentiful"],["generous","giving"],["clever","smart"],["strange","odd"],["journey","trip"],["rubbish","garbage"]];
+SY.forEach((x,i)=>mk("eng",by(i,SY.length),T3(`Synonym of "${x[0]}"?`,`"${x[0]}" का समानार्थी शब्द?`,`"${x[0]}" को पर्यायवाची शब्द?`),x[1],sh(SY.filter(y=>y!==x)).map(y=>y[1]),T3(`"${x[0]}" means almost the same as "${x[1]}".`,`"${x[0]}" और "${x[1]}" का अर्थ लगभग एक जैसा है।`,`"${x[0]}" र "${x[1]}" को अर्थ लगभग उस्तै हो।`)));
+const AN=[["hot","cold"],["up","down"],["day","night"],["happy","sad"],["fast","slow"],["hard","soft"],["light","dark"],["rich","poor"],["old","young"],["early","late"],["full","empty"],["strong","weak"],["clean","dirty"],["open","close"],["win","lose"],["love","hate"],["true","false"],["wet","dry"],["thick","thin"],["tall","short"],["heavy","light"],["generous","stingy"],["victory","defeat"],["expand","contract"],["ancient","modern"],["accept","reject"],["increase","decrease"],["optimist","pessimist"],["transparent","opaque"],["vague","precise"],["permanent","temporary"],["praise","criticize"],["scarce","abundant"],["arrogant","humble"],["brave","cowardly"],["rural","urban"],["innocent","guilty"],["major","minor"],["ascend","descend"],["voluntary","compulsory"],["deficit","surplus"],["fertile","barren"],["hostile","friendly"],["junior","senior"],["mortal","immortal"],["rapid","gradual"],["lenient","strict"],["frequent","rare"]];
+AN.forEach((x,i)=>mk("eng",by(i,AN.length),T3(`Opposite of "${x[0]}"?`,`"${x[0]}" का विलोम शब्द?`,`"${x[0]}" को विपरीतार्थी शब्द?`),x[1],sh(AN.filter(y=>y!==x)).map(y=>y[1]),T3(`The opposite of "${x[0]}" is "${x[1]}".`,`"${x[0]}" का विलोम "${x[1]}" है।`,`"${x[0]}" को विपरीतार्थी "${x[1]}" हो।`)));
+const IR=[["go","went"],["see","saw"],["eat","ate"],["take","took"],["give","gave"],["write","wrote"],["run","ran"],["drink","drank"],["swim","swam"],["sing","sang"],["begin","began"],["break","broke"],["speak","spoke"],["choose","chose"],["drive","drove"],["fly","flew"],["know","knew"],["grow","grew"],["throw","threw"],["draw","drew"],["wear","wore"],["buy","bought"],["bring","brought"],["think","thought"],["catch","caught"],["teach","taught"],["fight","fought"],["sell","sold"],["tell","told"],["find","found"],["leave","left"],["meet","met"],["sleep","slept"],["keep","kept"],["feel","felt"],["build","built"],["send","sent"],["spend","spent"],["lose","lost"],["win","won"],["hold","held"],["sit","sat"],["stand","stood"],["forget","forgot"],["steal","stole"],["ride","rode"],["rise","rose"],["shake","shook"],["wake","woke"],["hide","hid"]];
+IR.forEach((x,i)=>mk("eng",by(i,IR.length),T3(`Past tense of "${x[0]}"?`,`"${x[0]}" का past tense (भूतकाल) क्या है?`,`"${x[0]}" को past tense (भूतकाल) के हो?`),x[1],[x[0]+"ed",...sh(IR.filter(y=>y!==x)).map(y=>y[1])],T3(`The past tense of "${x[0]}" is "${x[1]}".`,`"${x[0]}" का past tense "${x[1]}" है।`,`"${x[0]}" को past tense "${x[1]}" हो।`)));
+const PL=[["child","children"],["man","men"],["woman","women"],["foot","feet"],["tooth","teeth"],["mouse","mice"],["person","people"],["goose","geese"],["leaf","leaves"],["knife","knives"],["wolf","wolves"],["city","cities"],["baby","babies"],["box","boxes"],["bus","buses"],["potato","potatoes"],["ox","oxen"],["cactus","cacti"],["criterion","criteria"],["analysis","analyses"],["phenomenon","phenomena"],["life","lives"],["shelf","shelves"],["hero","heroes"],["tomato","tomatoes"],["dish","dishes"]];
+PL.forEach((x,i)=>mk("eng",by(i,PL.length),T3(`Plural of "${x[0]}"?`,`"${x[0]}" का बहुवचन (plural) क्या है?`,`"${x[0]}" को बहुवचन (plural) के हो?`),x[1],[x[0]+"s",x[0]+"es",...sh(PL.filter(y=>y!==x)).map(y=>y[1])],T3(`The plural of "${x[0]}" is "${x[1]}".`,`"${x[0]}" का बहुवचन "${x[1]}" है।`,`"${x[0]}" को बहुवचन "${x[1]}" हो।`)));
+/* ---- NEPAL + SCIENCE (hand written) ---- */
+A("gk","easy","What is the capital of Nepal?|नेपाल की राजधानी क्या है?|नेपालको राजधानी के हो?","Kathmandu;Pokhara;Biratnagar;Lalitpur",0,"Kathmandu is the capital of Nepal.|काठमांडू नेपाल की राजधानी है।|काठमाडौँ नेपालको राजधानी हो।");
+A("gk","easy","Which is the highest mountain in the world?|दुनिया का सबसे ऊँचा पर्वत कौन सा है?|संसारको सबैभन्दा अग्लो पर्वत कुन हो?","Mount Everest;K2;Kangchenjunga;Makalu",0,"Mount Everest (8,848.86 m) is in Nepal-China border.|माउंट एवरेस्ट (8,848.86 मी) नेपाल-चीन सीमा पर है।|सगरमाथा (८,८४८.८६ मि) नेपाल-चीन सीमामा छ।");
+A("gk","medium","How many provinces does Nepal have?|नेपाल में कितने प्रदेश हैं?|नेपालमा कति वटा प्रदेश छन्?","7;5;6;8",0,"Nepal has 7 provinces.|नेपाल में 7 प्रदेश हैं।|नेपालमा ७ वटा प्रदेश छन्।");
+A("gk","medium","How many districts does Nepal have?|नेपाल में कितने जिले हैं?|नेपालमा कति वटा जिल्ला छन्?","77;75;72;80",0,"Nepal has 77 districts.|नेपाल में 77 जिले हैं।|नेपालमा ७७ वटा जिल्ला छन्।");
+A("gk","easy","What is the national flower of Nepal?|नेपाल का राष्ट्रीय फूल कौन सा है?|नेपालको राष्ट्रिय फूल कुन हो?","Rhododendron;Lotus;Rose;Marigold",0,"The Rhododendron (Lali Gurans) is Nepal's national flower.|लाली गुराँस नेपाल का राष्ट्रीय फूल है।|लालीगुराँस नेपालको राष्ट्रिय फूल हो।");
+A("gk","easy","What is the national bird of Nepal?|नेपाल का राष्ट्रीय पक्षी कौन सा है?|नेपालको राष्ट्रिय चरा कुन हो?","Danphe (Himalayan Monal);Peacock;Eagle;Parrot",0,"Danphe is Nepal's national bird.|डाँफे नेपाल का राष्ट्रीय पक्षी है।|डाँफे नेपालको राष्ट्रिय चरा हो।");
+A("gk","easy","What is the national animal of Nepal?|नेपाल का राष्ट्रीय पशु कौन सा है?|नेपालको राष्ट्रिय पशु कुन हो?","Cow;Tiger;Elephant;Horse",0,"The cow is Nepal's national animal.|गाय नेपाल का राष्ट्रीय पशु है।|गाई नेपालको राष्ट्रिय पशु हो।");
+A("gk","easy","Where was Gautam Buddha born?|गौतम बुद्ध का जन्म कहाँ हुआ था?|गौतम बुद्धको जन्म कहाँ भएको थियो?","Lumbini;Kathmandu;Janakpur;Bodh Gaya",0,"Buddha was born in Lumbini, Nepal.|बुद्ध का जन्म नेपाल के लुंबिनी में हुआ।|बुद्धको जन्म नेपालको लुम्बिनीमा भएको हो।");
+A("gk","medium","Which city is called the City of Lakes in Nepal?|नेपाल का 'झीलों का शहर' कौन सा है?|नेपालको 'तालहरूको सहर' कुन हो?","Pokhara;Dharan;Butwal;Hetauda",0,"Pokhara is famous for its lakes.|पोखरा अपनी झीलों के लिए प्रसिद्ध है।|पोखरा तालहरूका लागि प्रसिद्ध छ।");
+A("gk","medium","Which is the longest river in Nepal?|नेपाल की सबसे लंबी नदी कौन सी है?|नेपालको सबैभन्दा लामो नदी कुन हो?","Karnali;Koshi;Gandaki;Bagmati",0,"Karnali (about 507 km inside Nepal) is the longest.|कर्णाली (नेपाल में लगभग 507 किमी) सबसे लंबी है।|कर्णाली (नेपालभित्र करिब ५०७ किमी) सबैभन्दा लामो हो।");
+A("gk","medium","What is the capital of Gandaki Province?|गंडकी प्रदेश की राजधानी क्या है?|गण्डकी प्रदेशको राजधानी के हो?","Pokhara;Gorkha;Baglung;Besisahar",0,"Pokhara is the capital of Gandaki Province.|पोखरा गंडकी प्रदेश की राजधानी है।|पोखरा गण्डकी प्रदेशको राजधानी हो।");
+A("gk","medium","What is the capital of Koshi Province?|कोशी प्रदेश की राजधानी क्या है?|कोशी प्रदेशको राजधानी के हो?","Biratnagar;Dharan;Ilam;Damak",0,"Biratnagar is the capital of Koshi Province.|विराटनगर कोशी प्रदेश की राजधानी है।|विराटनगर कोशी प्रदेशको राजधानी हो।");
+A("gk","hard","What is the capital of Bagmati Province?|बागमती प्रदेश की राजधानी क्या है?|बागमती प्रदेशको राजधानी के हो?","Hetauda;Kathmandu;Bhaktapur;Dhulikhel",0,"Hetauda is the capital of Bagmati Province.|हेटौडा बागमती प्रदेश की राजधानी है।|हेटौँडा बागमती प्रदेशको राजधानी हो।");
+A("gk","hard","What is the capital of Madhesh Province?|मधेश प्रदेश की राजधानी क्या है?|मधेश प्रदेशको राजधानी के हो?","Janakpur;Birgunj;Rajbiraj;Malangwa",0,"Janakpur is the capital of Madhesh Province.|जनकपुर मधेश प्रदेश की राजधानी है।|जनकपुर मधेश प्रदेशको राजधानी हो।");
+A("gk","hard","What is the capital of Karnali Province?|कर्णाली प्रदेश की राजधानी क्या है?|कर्णाली प्रदेशको राजधानी के हो?","Birendranagar (Surkhet);Jumla;Dolpa;Dailekh",0,"Birendranagar (Surkhet) is the capital of Karnali Province.|वीरेंद्रनगर (सुर्खेत) कर्णाली प्रदेश की राजधानी है।|वीरेन्द्रनगर (सुर्खेत) कर्णाली प्रदेशको राजधानी हो।");
+A("gk","medium","What is the currency of Nepal?|नेपाल की मुद्रा क्या है?|नेपालको मुद्रा के हो?","Nepalese Rupee;Taka;Dollar;Yen",0,"Nepal uses the Nepalese Rupee.|नेपाल की मुद्रा नेपाली रुपया है।|नेपालको मुद्रा नेपाली रुपैयाँ हो।");
+A("gk","hard","In which year did Nepal become a federal democratic republic?|नेपाल कब संघीय लोकतांत्रिक गणतंत्र बना?|नेपाल कुन वर्ष संघीय लोकतान्त्रिक गणतन्त्र बन्यो?","2008;2006;2015;1990",0,"The monarchy was abolished in 2008 (May 28, 2008).|2008 में राजतंत्र समाप्त हुआ।|२००८ मा राजतन्त्र अन्त्य भयो।");
+A("gk","hard","In which year was Nepal's current constitution promulgated?|नेपाल का वर्तमान संविधान कब लागू हुआ?|नेपालको वर्तमान संविधान कुन वर्ष जारी भयो?","2015;2008;2010;2017",0,"The Constitution of Nepal was promulgated in 2015.|नेपाल का संविधान 2015 में लागू हुआ।|नेपालको संविधान २०१५ मा जारी भयो।");
+A("gk","medium","Which temple in Kathmandu is famous for Lord Shiva?|काठमांडू का कौन सा मंदिर भगवान शिव के लिए प्रसिद्ध है?|काठमाडौँको कुन मन्दिर भगवान शिवका लागि प्रसिद्ध छ?","Pashupatinath;Swayambhunath;Boudhanath;Changu Narayan",0,"Pashupatinath is a famous Shiva temple.|पशुपतिनाथ प्रसिद्ध शिव मंदिर है।|पशुपतिनाथ प्रसिद्ध शिव मन्दिर हो।");
+A("sci","easy","Which planet is known as the Red Planet?|किस ग्रह को लाल ग्रह कहा जाता है?|कुन ग्रहलाई रातो ग्रह भनिन्छ?","Mars;Venus;Jupiter;Mercury",0,"Mars looks red because of iron oxide.|मंगल आयरन ऑक्साइड के कारण लाल दिखता है।|मंगल आइरन अक्साइडका कारण रातो देखिन्छ।");
+A("sci","easy","Which is the largest planet in our solar system?|हमारे सौरमंडल का सबसे बड़ा ग्रह कौन सा है?|हाम्रो सौर्यमण्डलको सबैभन्दा ठूलो ग्रह कुन हो?","Jupiter;Saturn;Earth;Neptune",0,"Jupiter is the largest planet.|बृहस्पति सबसे बड़ा ग्रह है।|बृहस्पति सबैभन्दा ठूलो ग्रह हो।");
+A("sci","easy","Which gas do plants take in for photosynthesis?|प्रकाश संश्लेषण के लिए पौधे कौन सी गैस लेते हैं?|प्रकाश संश्लेषणका लागि बिरुवाले कुन ग्याँस लिन्छन्?","Carbon dioxide;Oxygen;Nitrogen;Hydrogen",0,"Plants use CO₂, water and sunlight.|पौधे CO₂, पानी और धूप का उपयोग करते हैं।|बिरुवाले CO₂, पानी र घाम प्रयोग गर्छन्।");
+A("sci","medium","How many bones are in an adult human body?|एक वयस्क मानव शरीर में कितनी हड्डियाँ होती हैं?|वयस्क मानव शरीरमा कति वटा हड्डी हुन्छन्?","206;210;196;300",0,"An adult has 206 bones.|वयस्क में 206 हड्डियाँ होती हैं।|वयस्कमा २०६ वटा हड्डी हुन्छन्।");
+A("sci","medium","What is the chemical formula of water?|पानी का रासायनिक सूत्र क्या है?|पानीको रासायनिक सूत्र के हो?","H₂O;CO₂;O₂;NaCl",0,"Water is two hydrogen and one oxygen atoms: H₂O.|पानी में दो हाइड्रोजन और एक ऑक्सीजन परमाणु होते हैं।|पानीमा दुई हाइड्रोजन र एक अक्सिजन परमाणु हुन्छन्।");
+A("sci","medium","What is the speed of light (approx.)?|प्रकाश की गति (लगभग) कितनी है?|प्रकाशको गति (करिब) कति हो?","300,000 km/s;3,000 km/s;30,000 km/s;3,000,000 km/s",0,"Light travels about 300,000 km every second.|प्रकाश हर सेकंड लगभग 3,00,000 किमी चलता है।|प्रकाश प्रत्येक सेकेन्डमा करिब ३,००,००० किमी यात्रा गर्छ।");
+A("sci","hard","Which part of the cell contains DNA?|कोशिका का कौन सा भाग DNA रखता है?|कोषको कुन भागमा DNA हुन्छ?","Nucleus;Ribosome;Cell wall;Vacuole",0,"DNA is stored in the nucleus.|DNA केंद्रक में होता है।|DNA केन्द्रकमा हुन्छ।");
+A("sci","medium","Which vitamin do we get from sunlight?|धूप से हमें कौन सा विटामिन मिलता है?|घामबाट हामीले कुन भिटामिन पाउँछौँ?","Vitamin D;Vitamin A;Vitamin C;Vitamin B12",0,"Skin makes Vitamin D in sunlight.|त्वचा धूप में विटामिन D बनाती है।|छालाले घाममा भिटामिन D बनाउँछ।");
+A("sci","easy","What do we call animals that eat only plants?|केवल पौधे खाने वाले जानवरों को क्या कहते हैं?|बिरुवा मात्र खाने जनावरलाई के भनिन्छ?","Herbivores;Carnivores;Omnivores;Insectivores",0,"Herbivores eat only plants.|शाकाहारी जीव केवल पौधे खाते हैं।|शाकाहारी जीव बिरुवा मात्र खान्छन्।");
+A("sci","hard","What is the hardest natural substance?|सबसे कठोर प्राकृतिक पदार्थ कौन सा है?|सबैभन्दा कडा प्राकृतिक पदार्थ कुन हो?","Diamond;Iron;Quartz;Gold",0,"Diamond is the hardest natural material.|हीरा सबसे कठोर प्राकृतिक पदार्थ है।|हीरा सबैभन्दा कडा प्राकृतिक पदार्थ हो।");
+A("gk","medium","Who wrote the Indian national anthem 'Jana Gana Mana'?|'जन गण मन' किसने लिखा?|'जन गण मन' कसले लेखेका हुन्?","Rabindranath Tagore;Bankim Chandra;Premchand;Iqbal",0,"Rabindranath Tagore wrote it.|रवींद्रनाथ टैगोर ने इसे लिखा।|रवीन्द्रनाथ टैगोरले यो लेखेका हुन्।");
+A("gk","easy","How many continents are there on Earth?|पृथ्वी पर कितने महाद्वीप हैं?|पृथ्वीमा कति वटा महादेश छन्?","7;5;6;8",0,"There are 7 continents.|7 महाद्वीप हैं।|७ वटा महादेश छन्।");
+A("gk","easy","Which is the largest ocean?|सबसे बड़ा महासागर कौन सा है?|सबैभन्दा ठूलो महासागर कुन हो?","Pacific Ocean;Atlantic Ocean;Indian Ocean;Arctic Ocean",0,"The Pacific is the largest ocean.|प्रशांत महासागर सबसे बड़ा है।|प्रशान्त महासागर सबैभन्दा ठूलो हो।");
+A("gk","medium","Which is the longest river in the world (commonly cited)?|दुनिया की सबसे लंबी नदी कौन सी मानी जाती है?|संसारको सबैभन्दा लामो नदी कुन मानिन्छ?","Nile;Amazon;Ganga;Yangtze",0,"The Nile (about 6,650 km) is commonly cited as longest.|नील नदी (लगभग 6,650 किमी) सबसे लंबी मानी जाती है।|नाइल नदी (करिब ६,६५० किमी) सबैभन्दा लामो मानिन्छ।");
+A("gk","hard","Who was the first person to walk on the Moon?|चाँद पर चलने वाला पहला इंसान कौन था?|चन्द्रमामा हिँड्ने पहिलो मानिस को थिए?","Neil Armstrong;Buzz Aldrin;Yuri Gagarin;Alan Shepard",0,"Neil Armstrong in 1969 (Apollo 11).|नील आर्मस्ट्रांग, 1969 (अपोलो 11)।|नील आर्मस्ट्रङ, १९६९ (अपोलो ११)।");
+})();
 
 /* Photo Quiz questions. For a real photo add img:"https://..." or a local file path like img:"photos/tiger.jpg" */
 Q.push(
@@ -823,23 +927,48 @@ function spin(){const p=load();const free=p.spin!==today();if(isKid()&&!free)ret
  app.innerHTML=`<div class="card"><div class="big" id="sp">🎰</div></div>`;
  let n=0;const iv=setInterval(()=>{$("#sp").textContent=lab(pick(prizes));
   if(++n>14){clearInterval(iv);const q=load();if(typeof w==="number")q.coins+=w;else q[w]++;save(q);$("#sp").textContent="🎉 "+lab(w);setTimeout(()=>toast("🎉 "+lab(w)),1300)}},110)}
-const ITEMS=[{id:"fifty",n:"✂️ 50-50",p:30,t:"pu"},{id:"time",n:"⏱ +5s",p:20,t:"pu"},{id:"blue",n:"🔵 Classic NEXbrain",p:0,t:"skin"},{id:"gold",n:"🟡 Gold NEXbrain",p:200,t:"skin"},{id:"green",n:"🟢 Neon NEXbrain",p:150,t:"skin"},{id:"purple",n:"🟣 Galaxy NEXbrain",p:250,t:"skin"}];
-function shop(){const p=load();
- app.innerHTML=`<h1>🛒 ${c('shop')}</h1><div class="card"><div class="score"><div><b>🪙 ${p.coins}</b>Coins</div></div>`+
- ITEMS.map(it=>{const own=it.t==="skin"&&p.skins.includes(it.id);const eq=p.skin===it.id;
-  const r=it.t==="pu"?`🪙 ${it.p} (x${p[it.id]})`:(eq?"✅ "+c('equipped'):(own?c('equip'):"🪙 "+it.p));
-  return `<button class="opt" onclick="buy('${it.id}')">${it.n} — ${r}</button>`}).join("")+
- `</div><div class="card"><div class="nex">${avatar()}<div class="bubble">${c('shopsay')}</div></div></div><button class="btn sec" onclick="home()">${t('home')}</button>`}
-function buy(id){const p=load();const it=ITEMS.find(x=>x.id===id);
- if(it.t==="pu"){if(p.coins<it.p)return alert(c('nocoin'));p.coins-=it.p;p[id]++}
- else{if(!p.skins.includes(id)){if(p.coins<it.p)return alert(c('nocoin'));p.coins-=it.p;p.skins.push(id)}p.skin=id}
+/* ========== SHOP ========== */
+let SHOPTAB="pu",SHOPMSG="";
+const SH={pu:[["fifty","✂️","50-50 Lifeline","Remove 2 wrong options",50],["time","⏱","+5 Seconds","Get extra time",40],["hint","💡","Answer Hint","Removes 1 wrong option",75],["skip","⏩","Skip Question","Skip this question",100],["life","❤️","Extra Life","Forgives 1 wrong answer",150],["shield","🛡️","Special Shield","Protects your streak",250],["mystery","🎁","Mystery Box","Random reward",200]],
+ cu:[["royal","👑","Royal Avatar","Premium avatar",300],["frame","🖼️","Neon Frame","Glowing profile frame",250],["hero","🦸","Superhero Skin","Be a Quiz Hero!",350],["robot","🤖","AI Robot Skin","Robot avatar",300],["emoji","😎","Emoji Collection","Cool reactions",150],["blue","🔵","Classic NEXbrain","Default look",0],["gold","🟡","Gold NEXbrain","Golden robot",200],["green","🟢","Neon NEXbrain","Neon robot",150],["purple","🟣","Galaxy NEXbrain","Galaxy robot",250]]};
+const AVE={royal:"👑",hero:"🦸",robot:"🤖"},NSKIN=["blue","gold","green","purple"];
+function shop(tab){if(tab)SHOPTAB=tab;const p=load(),kid=isKid();
+ const tabs=[["pu","⚡ Power-ups"],["cu","🎨 Customize"],["rw","🎁 Rewards"]].map(x=>`<div class="chip ${SHOPTAB===x[0]?'on':''}" onclick="shop('${x[0]}')">${x[1]}</div>`).join("");
+ let body="";
+ if(SHOPTAB==="rw"){body=`<div class="sgrid">
+  <div class="si"><div class="ic">🎁</div><b>Daily Reward</b><small>Free coins every day${p.day===today()?' · claimed ✅':''}</small><button class="buy" onclick="daily()">Claim</button></div>
+  <div class="si"><div class="ic">🎰</div><b>Lucky Spin</b><small>${p.spin!==today()?'Free spin ready!':'Come back tomorrow'}</small><button class="buy" onclick="spin()">Spin</button></div>
+  <div class="si"><div class="ic">🎯</div><b>Level Rewards</b><small>Clear levels to earn coins · ${cleared(p)}/${MAXLV}</small><button class="buy" onclick="levels()">Play</button></div>
+  ${kid?'':`<div class="si"><div class="ic">👥</div><b>Invite Friends</b><small>+50 coins per friend</small><button class="buy" onclick="invite()">Invite</button></div>`}</div>`}
+ else{const L=SH[SHOPTAB].filter(x=>!(kid&&x[0]==="mystery"));
+  body=`<div class="sgrid">`+L.map(it=>{const id=it[0];let r;
+   if(SHOPTAB==="pu")r=`<button class="buy" onclick="shopBuy('${id}')">🪙 ${it[4]}</button>${id==="mystery"?'':`<small>You have: ${p[id]||0}</small>`}`;
+   else{const skin=NSKIN.includes(id),own=skin?p.skins.includes(id):(p.own||[]).includes(id),eq=skin?p.skin===id:id==="frame"?!!p.fr:id==="emoji"?own:p.av===AVE[id];
+    r=`<button class="buy ${eq?'eq':''}" onclick="shopBuy('${id}')">${eq?'✅ Equipped':own?'Equip':'🪙 '+it[4]}</button>`}
+   return `<div class="si"><div class="ic">${it[1]}</div><b>${it[2]}</b><small>${it[3]}</small>${r}</div>`}).join("")+`</div>`}
+ app.innerHTML=`<h1>🛒 ${c('shop')}</h1><div class="card"><div class="score"><div><b>🪙 ${p.coins}</b>Coins</div></div><div class="row" style="margin-top:8px">${tabs}</div>${SHOPMSG?`<div class="exp"><b>${SHOPMSG}</b></div>`:''}</div>${body}<div class="card"><div class="nex">${avatar()}<div class="bubble">${c('shopsay')}</div></div></div><button class="btn sec" onclick="home()">${t('home')}</button>`;SHOPMSG="";addNav("home")}
+function shopBuy(id){const p=load();p.own=p.own||[];const it=[...SH.pu,...SH.cu].find(x=>x[0]===id);if(!it)return;
+ const isPu=SH.pu.some(x=>x[0]===id);const pay=()=>{if(p.coins<it[4]){SHOPMSG=c('nocoin');return false}p.coins-=it[4];return true};
+ if(isPu){if(!pay())return shop();
+  if(id==="mystery"){const w=pick([50,100,100,150,150,200,300,"fifty","time","hint","skip"]);if(typeof w==="number"){p.coins+=w;SHOPMSG=`🎁 +${w} 🪙`}else{p[w]=(p[w]||0)+1;SHOPMSG="🎁 +1 "+SH.pu.find(x=>x[0]===w)[2]}}
+  else{p[id]=(p[id]||0)+1;SHOPMSG="✅ "+it[2]}}
+ else if(NSKIN.includes(id)){if(!p.skins.includes(id)){if(!pay())return shop();p.skins.push(id)}p.skin=id}
+ else{const had=p.own.includes(id);if(!had){if(!pay())return shop();p.own.push(id)}
+  if(id==="frame")p.fr=had?!p.fr:true;else if(AVE[id])p.av=(had&&p.av===AVE[id])?"":AVE[id]}
  save(p);shop()}
-function useFifty(){if(!S||S.locked)return;const p=load();if(p.fifty<1)return;p.fifty--;save(p);
- const wrong=[0,1,2,3].filter(x=>x!==S.q.a).sort(()=>Math.random()-.5).slice(0,2);
- const bs=document.querySelectorAll(".opt");wrong.forEach(i=>{bs[i].style.visibility="hidden"});
- const ch=document.querySelector("#pu .chip");if(ch)ch.textContent="✂️ 50-50 ("+p.fifty+")"}
-function useTime(){if(!S||S.locked)return;const p=load();if(p.time<1)return;p.time--;save(p);S.left=Math.min(S.left+5,20);
- const ch=document.querySelectorAll("#pu .chip")[1];if(ch)ch.textContent="⏱ +5s ("+p.time+")"}
+function puHTML(){if(FIX)return "";const p=load();const L=[["fifty","✂️ 50-50"],["time","⏱ +5s"],["hint","💡 Hint"],["skip","⏩ Skip"],["life","❤️ Life"],["shield","🛡️ Shield"]];
+ return L.filter(x=>x[0]==="fifty"||x[0]==="time"||(p[x[0]]||0)>0).map(x=>`<div class="chip${S&&((x[0]==="life"&&S.lifeOn)||(x[0]==="shield"&&S.shieldOn))?' on':''}" onclick="usePu('${x[0]}')">${x[1]} (${p[x[0]]||0})</div>`).join("")}
+function usePu(k){if(!S||!S.q||S.locked||FIX)return;const p=load();if((p[k]||0)<1)return shopGo();
+ if(k==="life"&&S.lifeOn)return;if(k==="shield"&&S.shieldOn)return;
+ const hide=n=>{const bs=document.querySelectorAll("#opts .opt");const w=[0,1,2,3].filter(x=>x!==S.q.a&&bs[x]&&bs[x].style.visibility!=="hidden").sort(()=>Math.random()-.5).slice(0,n);if(!w.length)return false;w.forEach(i=>{bs[i].style.visibility="hidden"});return true};
+ if(k==="fifty"){if(!hide(2))return}
+ else if(k==="hint"){if(!hide(1))return}
+ else if(k==="time"){S.left=Math.min(S.left+5,20)}
+ else if(k==="life"){S.lifeOn=true}
+ else if(k==="shield"){S.shieldOn=true}
+ else if(k==="skip"){p.skip--;save(p);clearInterval(timerId);S.locked=true;S.i--;return nextQ()}
+ p[k]--;save(p);const pu=$("#pu");if(pu)pu.innerHTML=puHTML()}
+function shopGo(){if(S&&!S.locked){/* stay in game; shop is reachable from home */const m=$("#say");if(m)m.textContent="🛒 Buy power-ups in Shop (Home → +)"}}
 
 /* ========== ANDROID APP (Capacitor + AdMob rewarded ads) ==========
  Only runs inside the Android app. On the web this block does nothing. */

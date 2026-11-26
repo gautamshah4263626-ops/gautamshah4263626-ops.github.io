@@ -97,7 +97,7 @@ small{color:var(--mut)}
 .tile{position:relative;border-radius:20px;padding:14px 4px 10px;text-align:center;color:#fff;font-weight:800;font-size:16px;border:1.5px solid #ffffff44;box-shadow:inset 0 0 18px #ffffff22,0 4px 14px #0008;cursor:pointer;min-height:96px}
 .tile .ic{font-size:30px;display:block;margin-bottom:2px}
 .tile small{display:block;color:#fff;opacity:.9;font-weight:600;font-size:13px}
-.tile .go{position:absolute;right:6px;bottom:8px;width:22px;height:22px;border-radius:50%;border:1.5px solid #fff9;font-size:15px;line-height:19px}
+.tile .go{position:absolute;right:8px;top:8px;width:22px;height:22px;border-radius:50%;border:1.5px solid #fff9;font-size:15px;line-height:19px}
 .t-easy{background:linear-gradient(160deg,#8b3dff,#3a1a9e)}.t-med{background:linear-gradient(160deg,#27d41f,#0a7a22)}.t-hard{background:linear-gradient(160deg,#ff5a1f,#c4170f)}
 .t-tea{background:linear-gradient(160deg,#2b8bff,#0a3fb0)}.t-bat{background:linear-gradient(160deg,#c026d3,#5b14b8)}.t-ai{background:linear-gradient(160deg,#16d3e6,#0a6ea8)}
 .mini{background:#0b1230;border:1.5px solid #4c3aa8;border-radius:20px;padding:10px 6px;text-align:center;font-weight:700;font-size:14px;min-height:122px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;box-shadow:0 0 12px #4c3aa855}
@@ -114,6 +114,7 @@ small{color:var(--mut)}
 .t-rep{background:linear-gradient(160deg,#0b2a6b,#08143a);border-color:#38d6ff99;color:#ffd54a}
 .t-mp{background:linear-gradient(160deg,#4b1fa8,#1a0d4d);border-color:#a78bfa99}
 .t-bm{background:linear-gradient(160deg,#0f7a2a,#073d17);border-color:#4ade8099}
+.mini .bar2{flex:none;height:10px;margin-top:6px}
 .mini .pct{font-size:28px;font-weight:900}
 .lvban{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1b1b78,#0b1240);border:1.5px solid #5b4bff;border-radius:22px;padding:12px;margin:12px 0;box-shadow:0 0 18px #5b4bff55}
 .lvban .ic{font-size:44px}
@@ -238,7 +239,7 @@ function home(){LV=null;FIX=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=n
   <div class="mini"><span class="ic">🎰</span>Lucky Spin<button onclick="spin()">${sf?'Spin Now ›':(isKid()?'Tomorrow':'30 🪙 ›')}</button></div>
   <div class="mini">Your Progress<span class="pct">${pr}%</span><div class="bar2" style="width:100%"><i style="width:${pr}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></i></div></div>
  </div>
- <div class="lvban"><span class="ic">🛡️</span><div class="tx"><b>Level Mode (1–30)</b>Complete 30 Levels &amp; Become a Quiz Master!</div><button onclick="levels()">Start Now ›</button></div>
+ <div class="lvban"><span class="ic">🛡️</span><div class="tx"><b>Level Mode (1–100)</b>Complete 100 Levels &amp; Become a Quiz Master!</div><button onclick="levels()">Start Now ›</button></div>
  ${(window.AndroidAds||ADS_DEMO)?`<button class="btn sec" onclick="watchAd()">📺 Watch Ad = +${AD_COINS} 🪙 (${adLeft(p)}/${AD_MAX} today)</button>`:''}${adBanner()}${webFooter()}`;
  addNav("home")}
 
@@ -933,7 +934,7 @@ const SH={pu:[["fifty","✂️","50-50 Lifeline","Remove 2 wrong options",50],["
  cu:[["royal","👑","Royal Avatar","Premium avatar",300],["frame","🖼️","Neon Frame","Glowing profile frame",250],["hero","🦸","Superhero Skin","Be a Quiz Hero!",350],["robot","🤖","AI Robot Skin","Robot avatar",300],["emoji","😎","Emoji Collection","Cool reactions",150],["blue","🔵","Classic NEXbrain","Default look",0],["gold","🟡","Gold NEXbrain","Golden robot",200],["green","🟢","Neon NEXbrain","Neon robot",150],["purple","🟣","Galaxy NEXbrain","Galaxy robot",250]]};
 const AVE={royal:"👑",hero:"🦸",robot:"🤖"},NSKIN=["blue","gold","green","purple"];
 function shop(tab){if(tab)SHOPTAB=tab;const p=load(),kid=isKid();
- const tabs=[["pu","⚡ Power-ups"],["cu","🎨 Customize"],["rw","🎁 Rewards"]].map(x=>`<div class="chip ${SHOPTAB===x[0]?'on':''}" onclick="shop('${x[0]}')">${x[1]}</div>`).join("");
+ const tabs=[["pu","⚡ Power-ups"],["cu","🎨 Customize"],["rw","🎁 Rewards"]].map(x=>`<div class="chip ${SHOPTAB===x[0]?'on':''}" style="flex:1;text-align:center;padding:9px 2px;font-size:13px;white-space:nowrap" onclick="shop('${x[0]}')">${x[1]}</div>`).join("");
  let body="";
  if(SHOPTAB==="rw"){body=`<div class="sgrid">
   <div class="si"><div class="ic">🎁</div><b>Daily Reward</b><small>Free coins every day${p.day===today()?' · claimed ✅':''}</small><button class="buy" onclick="daily()">Claim</button></div>
@@ -946,7 +947,7 @@ function shop(tab){if(tab)SHOPTAB=tab;const p=load(),kid=isKid();
    else{const skin=NSKIN.includes(id),own=skin?p.skins.includes(id):(p.own||[]).includes(id),eq=skin?p.skin===id:id==="frame"?!!p.fr:id==="emoji"?own:p.av===AVE[id];
     r=`<button class="buy ${eq?'eq':''}" onclick="shopBuy('${id}')">${eq?'✅ Equipped':own?'Equip':'🪙 '+it[4]}</button>`}
    return `<div class="si"><div class="ic">${it[1]}</div><b>${it[2]}</b><small>${it[3]}</small>${r}</div>`}).join("")+`</div>`}
- app.innerHTML=`<h1>🛒 ${c('shop')}</h1><div class="card"><div class="score"><div><b>🪙 ${p.coins}</b>Coins</div></div><div class="row" style="margin-top:8px">${tabs}</div>${SHOPMSG?`<div class="exp"><b>${SHOPMSG}</b></div>`:''}</div>${body}<div class="card"><div class="nex">${avatar()}<div class="bubble">${c('shopsay')}</div></div></div><button class="btn sec" onclick="home()">${t('home')}</button>`;SHOPMSG="";addNav("home")}
+ app.innerHTML=`<h1>🛒 ${c('shop')}</h1><div class="card"><div class="score"><div><b>🪙 ${p.coins}</b>Coins</div></div><div style="display:flex;gap:6px;margin-top:8px">${tabs}</div>${SHOPMSG?`<div class="exp"><b>${SHOPMSG}</b></div>`:''}</div>${body}<div class="card"><div class="nex">${avatar()}<div class="bubble">${c('shopsay')}</div></div></div><button class="btn sec" onclick="home()">${t('home')}</button>`;SHOPMSG="";addNav("home")}
 function shopBuy(id){const p=load();p.own=p.own||[];const it=[...SH.pu,...SH.cu].find(x=>x[0]===id);if(!it)return;
  const isPu=SH.pu.some(x=>x[0]===id);const pay=()=>{if(p.coins<it[4]){SHOPMSG=c('nocoin');return false}p.coins-=it[4];return true};
  if(isPu){if(!pay())return shop();

@@ -220,7 +220,7 @@ function quick(k,v){cfg[k]=v;startGame()}
 function board(){board0();addNav("lb")}
 async function boardOnline0(){await boardOnline0();addNav("lb")}
 
-function home(){LV=null;FIX=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
+function home(){LV=null;FIX=null;SURV=false;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=null}
  const p=load(),x=xpInfo(p),pr=Math.round(cleared(p)/MAXLV*100),nc=notifCount(p),dc=p.day===today(),sf=p.spin!==today();
  const T6=[["diff","easy","t-easy","⚡",t('easy'),"Quiz"],["diff","medium","t-med","⭐",t('medium'),"Quiz"],["diff","hard","t-hard","🏆",t('hard'),"Quiz"],
   ["mode","teacher","t-tea","🎓",t('teacher'),"Mode"],["mode","battle","t-bat","⚔️",t('battle'),"Mode"],["mode","smart","t-ai","🤖",t('smartai'),"Mode"]];
@@ -239,7 +239,8 @@ function home(){LV=null;FIX=null;ROUND=8;if(CFG0){Object.assign(cfg,CFG0);CFG0=n
   <div class="mini"><span class="ic">🎰</span>Lucky Spin<button onclick="spin()">${sf?'Spin Now ›':(isKid()?'Tomorrow':'30 🪙 ›')}</button></div>
   <div class="mini">Your Progress<span class="pct">${pr}%</span><div class="bar2" style="width:100%"><i style="width:${pr}%;background:linear-gradient(90deg,#22c55e,#16a34a)"></i></div></div>
  </div>
- <div class="lvban"><span class="ic">🛡️</span><div class="tx"><b>Level Mode (1–100)</b>Complete 100 Levels &amp; Become a Quiz Master!</div><button onclick="levels()">Start Now ›</button></div>
+ <div class="row" style="gap:8px;margin:10px 0 0"><button class="btn sec" style="flex:1;margin:0" onclick="survival()">⚡ Survival Mode</button>${isKid()?'':`<button class="btn sec" style="flex:1;margin:0" onclick="exams()">🎓 Exam Packs</button>`}</div>
+ <div class="lvban"><span class="ic">🛡️</span><div class="tx"><b>Level Mode (1–100)</b>Complete 100 Levels &amp; Become a Quiz Master!</div><button onclick="levels()">Start Now ›</button></div>${installBtn()}
  ${(window.AndroidAds||ADS_DEMO)?`<button class="btn sec" onclick="watchAd()">📺 Watch Ad = +${AD_COINS} 🪙 (${adLeft(p)}/${AD_MAX} today)</button>`:''}${adBanner()}${webFooter()}`;
  addNav("home")}
 
@@ -251,7 +252,7 @@ function notif(){const p=load();const L=[];
 
 function settings(){
  app.innerHTML=`<h1>⚙️ Settings</h1><div class="card"><div class="lbl">${t('lang')}</div>${chips('lang',[["hi","हिन्दी"],["en","English"],["ne","नेपाली"]])}
- <div class="lbl">${t('cat')}</div>${chips('cat',(isKid()?[["kids","🧒 "+c2('kids')]]:[]).concat([["all",t('all')],["gk",t('gk')],["sci",t('sci')],["math",t('math')],["eng",t('eng')],["pic","📷 "+c2('pic')]],isKid()?[]:[["kids","🧒 "+c2('kids')]]))}
+ <div class="lbl">${t('cat')}</div>${chips('cat',(isKid()?[["kids","🧒 "+c2('kids')]]:[]).concat([["all",t('all')],["gk",t('gk')],["sci",t('sci')],["math",t('math')],["eng",t('eng')],["pic","📷 "+c2('pic')]],isKid()?[]:[["kids","🧒 "+c2('kids')],["lok","🏛️ Loksewa"],["see","📘 SEE"],["neb","🎓 NEB"]]))}
  ${(cfg.mode!=="teacher"&&!isKid())?`<div class="lbl">${c('bet')}</div>${chips('bet',[["0","0"],["20","🪙 20"],["50","🪙 50"]])}`:''}
  ${isKid()?'':`<div class="lbl">Online</div><label style="font-size:14px"><input type="checkbox" ${cfg.online?'checked':''} onchange="cfg.online=this.checked"> ${t('online')}</label>`}
  <div class="lbl">Age group</div>${ageChips()}
@@ -279,7 +280,7 @@ async function startGame(){
  S={used:[],i:0,you:0,ai:0,right:0,streak:0,wrongStreak:0,level:cfg.diff==="smart"?(ageG()==="kid"?"easy":"medium"):cfg.diff,online:[],note:"",coins:0,bet:0};
  {const p=load();const b=Number(cfg.bet)||0;if(cfg.mode!=="teacher"&&b>0&&!isKid()&&p.coins>=b){p.coins-=b;save(p);S.bet=b}}
  if(FIX)S.fixed=chSet(FIX.seed);
- if(cfg.online&&!isKid()&&!["eng","pic","kids","saved","mist"].includes(cfg.cat)){
+ if(cfg.online&&!isKid()&&!["eng","pic","kids","saved","mist","lok","see","neb"].includes(cfg.cat)){
   app.innerHTML=`<div class="card"><div class="nex">${avatar()}<div class="bubble">${t('loading')}</div></div></div>`;
   S.online=await fetchOnline();
   if(!S.online.length)S.note=t('offl');
@@ -317,7 +318,7 @@ async function fetchOnline(){
 }
 
 function nextQ(){
- if(S.i>=ROUND)return result();
+ if(S.i>=ROUND||S.dead)return result();
  let q=null;
  if(S.online.length){q=S.online.shift()}
  else if(FIX&&S.fixed){const ix=S.fixed.shift();q=Q[ix];if(!q)return result();S.used.push(ix)}
@@ -342,7 +343,7 @@ function teacherNow(){return cfg.mode==="teacher"||(cfg.mode==="smart"&&S.wrongS
 function render(){
  const q=S.q;
  const msg=cfg.mode==="teacher"?t('tch'):(cfg.mode==="battle"?t('bat'):(teacherNow()?t('tch'):t('bat')));
- app.innerHTML=`<div class="top"><b>${t('q')} ${S.i}/${ROUND}</b><span>🪙 <b id="cn">${load().coins}</b> &nbsp; ⏱ <b id="tn">${TIME}</b>s</span></div>
+ app.innerHTML=`<div class="top"><b>${t('q')} ${S.i}${SURV?'':'/'+ROUND}</b><span>🪙 <b id="cn">${load().coins}</b> &nbsp; ⏱ <b id="tn">${TIME}</b>s</span></div>
  <div class="bar"><i id="tb"></i></div>
  <div class="score"><div>${phHTML(34)}<b>${S.you}</b>${t('you')}</div>${cfg.mode!=="teacher"?`<div><b>${S.ai}</b>${t('ai')}</div>`:''}<div><b>${S.streak}</b>🔥</div></div>
  <div class="card"><div class="nex">${avatar()}<div class="bubble" id="say">${S.note||msg}</div></div></div>
@@ -358,14 +359,14 @@ function answer(i){
  const pu=$("#pu");if(pu)pu.style.display="none";
  snd(i===q.a?"ok":"bad");
  let gain=0;
- if(ok){S.you++;S.right++;S.streak++;S.wrongStreak=0;gain=10+(q.d==="hard"?5:0)+(S.streak>=3?5:0);const pp=load();pp.coins+=gain;save(pp);S.coins+=gain;const cn=$("#cn");if(cn)cn.textContent=pp.coins}else{if(S.lifeOn){S.lifeOn=false;S.right++;S.you++;lifeMsg="❤️ Extra Life used — counted as correct!"}if(S.shieldOn){S.shieldOn=false;lifeMsg+=(lifeMsg?" ":"")+"🛡️ Shield protected your streak!"}else if(!lifeMsg.includes("Life"))S.streak=0;else S.streak=0;S.wrongStreak++}
+ if(ok){S.you++;S.right++;S.streak++;S.wrongStreak=0;gain=10+(q.d==="hard"?5:0)+(S.streak>=3?5:0);const pp=load();pp.coins+=gain;save(pp);S.coins+=gain;const cn=$("#cn");if(cn)cn.textContent=pp.coins}else{const hadLife=!!S.lifeOn;if(SURV&&!hadLife)S.dead=true;if(S.lifeOn){S.lifeOn=false;S.right++;S.you++;lifeMsg="❤️ Extra Life used — counted as correct!"}if(S.shieldOn){S.shieldOn=false;lifeMsg+=(lifeMsg?" ":"")+"🛡️ Shield protected your streak!"}else if(!lifeMsg.includes("Life"))S.streak=0;else S.streak=0;S.wrongStreak++}
  let aiTxt="";
  if(S.aiPick!==null){const aiOk=S.aiPick===q.a;if(aiOk)S.ai++;aiTxt=`<div style="margin-top:8px;font-size:13px;color:var(--mut)">🤖 ${t('gotit')}: ${String.fromCharCode(65+S.aiPick)}. ${q.o[S.aiPick]} ${aiOk?'✅':'❌'}</div>`}
  if(cfg.diff==="smart"){const L=["easy","medium","hard"];let k=L.indexOf(S.level);k=ok?Math.min(isKid()?1:2,k+1):Math.max(0,k-1);S.level=L[k]}
  const say=ok?pick(T[cfg.lang].ok1):(i===-1?t('time'):pick(T[cfg.lang].bad1));
  $("#say").textContent=say+((ok&&(load().own||[]).includes("emoji"))?" "+pick(["😎","🤩","🔥","🥳","😍","🚀"]):"");
  $(".nex svg").outerHTML=avatar(ok?"happy":"sad");
- $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${lifeMsg?`<div class="exp"><b>${lifeMsg}</b></div>`:''}${aiTxt}${bmBtn(q)}<button class="btn" onclick="nextQ()">${S.i>=ROUND||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&poolOK(x)).length===0)?t('finish'):t('next')}</button>`;
+ $("#fb").innerHTML=`<div class="exp"><b>${ok?t('right'):(i===-1?t('time'):t('wrong'))}</b> ${gain?`<b style="color:#fbbf24">+${gain} 🪙</b> `:''}${t('correct')}: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>${q.e[cfg.lang]}</div>${lifeMsg?`<div class="exp"><b>${lifeMsg}</b></div>`:''}${aiTxt}${bmBtn(q)}<button class="btn" onclick="nextQ()">${S.i>=ROUND||S.dead||(!S.online.length&&Q.filter((x,ix)=>!S.used.includes(ix)&&poolOK(x)).length===0)?t('finish'):t('next')}</button>`;
 }
 
 function result(){
@@ -379,6 +380,7 @@ function result(){
    p.stars[LV]=Math.max(prev,st);if(LV===p.lvl&&LV<MAXLV)p.lvl=LV+1}
   else lvMsg=`Level ${LV} ❌ (${need}/5)`;
   S.lvPass=pass}
+ if(SURV)p.sv=Math.max(p.sv||0,S.right);LASTR={you:S.you,n:n,acc:acc,lv:LV,sv:SURV?S.right:null};
  p.games++;p.total+=n;p.right+=S.right;p.best=Math.max(p.best,S.you);save(p);lbAdd(S.you,n,acc);syncOnline(p);snd(S.you>=S.ai?"win":"bad");
  let verdict="";
  if(cfg.mode!=="teacher"){verdict=S.you>S.ai?t('win'):(S.you<S.ai?t('lose'):t('draw'))}
@@ -387,8 +389,9 @@ function result(){
  <div class="card"><div class="nex">${phHTML(56)}${avatar(S.you>=S.ai?'happy':'sad')}<div class="bubble">${verdict||t('tch')}</div></div></div>
  <div class="card"><div class="big">${S.you}/${n}</div><div class="rank">🏅 ${acc>=90?"Quiz Master 👑":acc>=70?"Pro Player ⭐":acc>=40?"Challenger 🔥":"Rookie 🌱"}</div>
  <div class="score" style="margin-top:10px"><div><b>${acc}%</b>${t('acc')}</div>${cfg.mode!=="teacher"?`<div><b>${S.ai}</b>${t('ai')}</div>`:''}<div><b>${S.streak}</b>🔥</div></div>
- <div class="exp">🪙 +${S.coins} ${c('earned')}${betMsg?' · '+betMsg:''} · ${c('total')}: ${p.coins}${lvMsg?'<br><b>'+lvMsg+'</b>':''}</div>
+ <div class="exp">🪙 +${S.coins} ${c('earned')}${betMsg?' · '+betMsg:''} · ${c('total')}: ${p.coins}${lvMsg?'<br><b>'+lvMsg+'</b>':''}</div>${SURV?`<div class="exp">⚡ Survival: <b>${S.right}</b> correct · Best: <b>${p.sv}</b></div>`:''}
  <div class="lbl">${t('rep')}</div><div class="exp">${t('tip')}: ${tip}</div></div>${adBanner()}
+ <button class="btn sec" onclick="shareCard()">📸 Share Result Card</button>
  ${LV?((S.lvPass&&LV<MAXLV?`<button class="btn" onclick="startLevel(${LV+1})">Next Level ➜</button>`:'')+`<button class="btn ${S.lvPass&&LV<MAXLV?'sec':''}" onclick="startLevel(${LV})">🔁 Retry</button><button class="btn sec" onclick="levels()">🎯 Levels</button>`):`<button class="btn" onclick="startGame()">${t('again')}</button>`}<button class="btn sec" onclick="home()">${t('home')}</button>`;
  if(FIX)chResult();
 }
@@ -585,7 +588,7 @@ function ageScreen(){
  <div class="row" style="justify-content:center">`+["hi","en","ne"].map(l=>`<div class="chip ${cfg.lang===l?'on':''}" onclick="cfg.lang='${l}';ageScreen()">${{hi:"हिन्दी",en:"English",ne:"नेपाली"}[l]}</div>`).join("")+`</div>`}
 
 /* ========== LEVELS ========== */
-let LV=null,CFG0=null,FIX=null,PSET=null,PENDING_CH=null;
+let LV=null,CFG0=null,FIX=null,PSET=null,PENDING_CH=null,SURV=false,LASTR=null,DEFER_PWA=null;const EX=["lok","see","neb"];
 const MAXLV=100;
 function lvNeed(n){return n>20?4:3}
 function levels(){const p=load();LV=null;
@@ -596,7 +599,7 @@ function levels(){const p=load();LV=null;
   return `<div class="chip ${lock?'':'on'}" style="width:calc(20% - 8px);text-align:center;padding:12px 0;${lock?'opacity:.45':''}" onclick="${lock?'':'startLevel('+n+')'}">${lock?'🔒':n}<br><small>${lock?'&nbsp;':'⭐'.repeat(st)+'☆'.repeat(3-st)}</small></div>`}).join("")+`</div></div>`).join("")+
  `<button class="btn sec" onclick="home()">${t('home')}</button>`}
 function startLevel(n){if(!CFG0)CFG0=Object.assign({},cfg);
- LV=n;ROUND=5;cfg.cat="all";cfg.bet="0";cfg.online=false;cfg.diff=lvDiff(n);startGame()}
+ LV=n;SURV=false;ROUND=5;cfg.cat="all";cfg.bet="0";cfg.online=false;cfg.diff=lvDiff(n);startGame()}
 
 /* ========== INVITE (share link -> coins) ==========
  After you host the game (GitHub Pages / Netlify), paste its public address here, e.g. "https://yourname.github.io/quiz/" */
@@ -852,6 +855,90 @@ A("gk","medium","Which is the longest river in the world (commonly cited)?|द�
 A("gk","hard","Who was the first person to walk on the Moon?|चाँद पर चलने वाला पहला इंसान कौन था?|चन्द्रमामा हिँड्ने पहिलो मानिस को थिए?","Neil Armstrong;Buzz Aldrin;Yuri Gagarin;Alan Shepard",0,"Neil Armstrong in 1969 (Apollo 11).|नील आर्मस्ट्रांग, 1969 (अपोलो 11)।|नील आर्मस्ट्रङ, १९६९ (अपोलो ११)।");
 })();
 
+/* ===== EXAM PACKS: Loksewa / SEE / NEB ===== */
+(function(){const R=rng(777);const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function X(c,d,en,ne,o,een,ene){const L=o.split(";"),r=L[0],f=sh(L);A(c,d,en+"|"+ne+"|"+ne,f.join(";"),f.indexOf(r),een+"|"+ene+"|"+ene)}
+/* --- Loksewa (Nepal GK / civics / history) --- */
+const L=(d,en,ne,o,a,b)=>X("lok",d,en,ne,o,a,b);
+L("easy","In which year was the current Constitution of Nepal promulgated?","नेपालको वर्तमान संविधान कुन वर्ष जारी भयो?","2015 (2072 BS);2008 (2065 BS);2007 (2063 BS);1990 (2047 BS)","The Constitution of Nepal was promulgated on 20 September 2015 (Asoj 3, 2072).","नेपालको संविधान २०७२ असोज ३ (२०१५ सेप्टेम्बर २०) मा जारी भएको हो।");
+L("medium","How many seats are there in the House of Representatives of Nepal?","नेपालको प्रतिनिधि सभामा कति सिट छन्?","275;250;301;240","The House has 275 seats: 165 directly elected and 110 proportional.","प्रतिनिधि सभामा २७५ सिट छन्: १६५ प्रत्यक्ष र ११० समानुपातिक।");
+L("medium","How many members are there in the National Assembly (Rastriya Sabha)?","राष्ट्रिय सभामा कति सदस्य हुन्छन्?","59;75;60;110","The National Assembly has 59 members.","राष्ट्रिय सभामा ५९ सदस्य हुन्छन्।");
+L("easy","What is the minimum voting age in Nepal?","नेपालमा मतदान गर्ने न्यूनतम उमेर कति हो?","18 years;16 years;20 years;21 years","Every citizen aged 18 or above can vote.","१८ वर्ष वा सोभन्दा माथिका नागरिकले मतदान गर्न पाउँछन्।");
+L("medium","What is the term of the President of Nepal?","नेपालका राष्ट्रपतिको कार्यकाल कति वर्षको हुन्छ?","5 years;4 years;6 years;7 years","The President is elected for a five-year term.","राष्ट्रपति ५ वर्षका लागि निर्वाचित हुन्छन्।");
+L("hard","In which year did Nepal become a member of the United Nations?","नेपाल संयुक्त राष्ट्रसंघको सदस्य कुन वर्ष बन्यो?","1955;1945;1960;1950","Nepal joined the UN in 1955.","नेपाल सन् १९५५ मा संयुक्त राष्ट्रसंघको सदस्य बन्यो।");
+L("medium","Where is the headquarters of SAARC located?","सार्कको सचिवालय कहाँ छ?","Kathmandu;New Delhi;Dhaka;Islamabad","The SAARC Secretariat is in Kathmandu.","सार्क सचिवालय काठमाडौँमा छ।");
+L("medium","Who started the unification of Nepal?","नेपालको एकीकरण कसले सुरु गरे?","Prithvi Narayan Shah;Bhimsen Thapa;Jung Bahadur Rana;Tribhuvan","Prithvi Narayan Shah of Gorkha began unification; he conquered Kathmandu in 1768.","गोरखाका पृथ्वीनारायण शाहले एकीकरण सुरु गरे; उनले १७६८ मा काठमाडौँ जिते।");
+L("hard","The Treaty of Sugauli was signed in which year?","सुगौली सन्धि कुन वर्ष भयो?","1816;1792;1856;1923","The Treaty of Sugauli was signed in 1816 (1873 BS) after the Anglo-Nepal War.","सुगौली सन्धि १८१६ (१८७३ साल) मा भएको थियो।");
+L("medium","When did the Rana regime end in Nepal?","नेपालमा राणा शासन कहिले अन्त्य भयो?","1951 (2007 BS);1960 (2017 BS);1990 (2047 BS);1846 (1903 BS)","The Rana regime ended in 1951 (2007 BS).","राणा शासन २००७ साल (१९५१) मा अन्त्य भयो।");
+L("hard","Who was the first elected Prime Minister of Nepal?","नेपालका पहिलो निर्वाचित प्रधानमन्त्री को थिए?","B. P. Koirala;Girija Prasad Koirala;Matrika Prasad Koirala;Tanka Prasad Acharya","B. P. Koirala became PM after the 1959 election.","बी. पी. कोइराला १९५९ को निर्वाचनपछि प्रधानमन्त्री बने।");
+L("easy","Which is the largest lake in Nepal?","नेपालको सबैभन्दा ठूलो ताल कुन हो?","Rara Lake;Phewa Lake;Tilicho Lake;Begnas Lake","Rara Lake in Mugu is the largest lake in Nepal.","मुगुमा रहेको रारा ताल नेपालको सबैभन्दा ठूलो ताल हो।");
+L("medium","Which is the largest district of Nepal by area?","क्षेत्रफलका आधारमा नेपालको सबैभन्दा ठूलो जिल्ला कुन हो?","Dolpa;Humla;Mustang;Jumla","Dolpa is the largest district by area.","डोल्पा क्षेत्रफलका हिसाबले सबैभन्दा ठूलो जिल्ला हो।");
+L("medium","Which is the smallest district of Nepal by area?","क्षेत्रफलका आधारमा नेपालको सबैभन्दा सानो जिल्ला कुन हो?","Bhaktapur;Lalitpur;Kathmandu;Dhanusha","Bhaktapur is the smallest district.","भक्तपुर सबैभन्दा सानो जिल्ला हो।");
+L("medium","Which was the first national park established in Nepal?","नेपालमा स्थापना भएको पहिलो राष्ट्रिय निकुञ्ज कुन हो?","Chitwan National Park;Langtang National Park;Shey Phoksundo;Bardiya National Park","Chitwan National Park was established in 1973.","चितवन राष्ट्रिय निकुञ्ज सन् १९७३ मा स्थापना भएको हो।");
+L("hard","Tribhuvan University was established in which year?","त्रिभुवन विश्वविद्यालय कुन वर्ष स्थापना भयो?","1959 (2016 BS);1951 (2008 BS);1972 (2029 BS);1990 (2047 BS)","Tribhuvan University was established in 1959 (2016 BS).","त्रिभुवन विश्वविद्यालय २०१६ साल (१९५९) मा स्थापना भएको हो।");
+L("hard","Nepal Rastra Bank was established in which year?","नेपाल राष्ट्र बैंक कुन वर्ष स्थापना भयो?","1956 (2013 BS);1937 (1994 BS);1970 (2027 BS);1951 (2008 BS)","Nepal Rastra Bank, the central bank, was established in 1956 (2013 BS).","केन्द्रीय बैंक नेपाल राष्ट्र बैंक २०१३ साल (१९५६) मा स्थापना भएको हो।");
+L("easy","Which three cities make up the old Kathmandu Valley kingdoms?","काठमाडौँ उपत्यकाका पुराना तीन राज्य कुन-कुन हुन्?","Kathmandu, Lalitpur, Bhaktapur;Kathmandu, Pokhara, Patan;Bhaktapur, Kirtipur, Janakpur;Lalitpur, Hetauda, Dhulikhel","The three old kingdoms were Kathmandu, Lalitpur (Patan) and Bhaktapur.","काठमाडौँ, ललितपुर (पाटन) र भक्तपुर तीन पुराना राज्य हुन्।");
+L("medium","Bikram Sambat (BS) is ahead of the Gregorian calendar by about how many years?","विक्रम संवत् ईस्वी सन्भन्दा करिब कति वर्ष अगाडि छ?","About 57 years;About 100 years;About 20 years;About 75 years","BS year minus about 56.7 equals the AD year.","विक्रम संवत् ईस्वी सन्भन्दा करिब ५६.७ वर्ष अगाडि छ।");
+L("medium","Which date is celebrated as Constitution Day in Nepal?","नेपालमा संविधान दिवस कुन मितिमा मनाइन्छ?","Asoj 3 (20 September);Jestha 15 (29 May);Magh 1;Baisakh 1","Constitution Day is celebrated on Asoj 3.","संविधान दिवस असोज ३ मा मनाइन्छ।");
+L("hard","Which river forms the western border between Nepal and India?","नेपाल र भारतबीच पश्चिमी सीमा बनाउने नदी कुन हो?","Mahakali;Koshi;Narayani;Rapti","The Mahakali river forms the western boundary.","महाकाली नदीले पश्चिमी सिमाना बनाउँछ।");
+L("medium","How many local governments (local levels) does Nepal have?","नेपालमा कति वटा स्थानीय तह छन्?","753;77;7;650","Nepal has 753 local levels (6 metropolitan, 11 sub-metropolitan, 276 municipalities and 460 rural municipalities).","नेपालमा ७५३ स्थानीय तह छन्।");
+L("hard","The lyrics of Nepal's national anthem were written by?","नेपालको राष्ट्रिय गानका गीतकार को हुन्?","Byakul Maila;Lekhnath Paudyal;Laxmi Prasad Devkota;Madhav Prasad Ghimire","'Sayaun Thunga Phulka' was written by Byakul Maila (Pradeep Kumar Rai).","'सयौं थुँगा फूलका' का गीतकार व्याकुल माइला हुन्।");
+L("easy","Which international airport is closest to Lumbini?","लुम्बिनीको सबैभन्दा नजिकको अन्तर्राष्ट्रिय विमानस्थल कुन हो?","Gautam Buddha International Airport;Tribhuvan International Airport;Pokhara International Airport;Janakpur Airport","Gautam Buddha International Airport is in Bhairahawa, near Lumbini.","गौतम बुद्ध अन्तर्राष्ट्रिय विमानस्थल भैरहवामा, लुम्बिनी नजिक छ।");
+/* --- SEE (class 10 level) --- */
+const E=(d,en,ne,o,a,b)=>X("see",d,en,ne,o,a,b);
+E("easy","What is the SI unit of force?","बलको SI एकाइ के हो?","Newton;Joule;Watt;Pascal","Force is measured in newtons (N).","बल न्युटन (N) मा नापिन्छ।");
+E("easy","What is the SI unit of power?","शक्तिको SI एकाइ के हो?","Watt;Newton;Joule;Ampere","Power is measured in watts (W).","शक्ति वाट (W) मा नापिन्छ।");
+E("easy","What is the chemical formula of common salt?","खानेनुनको रासायनिक सूत्र के हो?","NaCl;KCl;CaCO₃;NaOH","Common salt is sodium chloride, NaCl.","खानेनुन सोडियम क्लोराइड NaCl हो।");
+E("easy","What is the pH of a neutral solution at 25 °C?","२५ °C मा उदासीन घोलको pH कति हुन्छ?","7;0;14;1","Pure water is neutral with pH 7.","शुद्ध पानी उदासीन हुन्छ, pH ७।");
+E("easy","Which cell organelle is called the powerhouse of the cell?","कोषको शक्तिगृह कुन अङ्गक हो?","Mitochondria;Nucleus;Ribosome;Chloroplast","Mitochondria release energy from food.","माइटोकोन्ड्रियाले खानाबाट ऊर्जा निकाल्छ।");
+E("medium","What is the value of acceleration due to gravity on Earth (approx.)?","पृथ्वीमा गुरुत्वीय त्वरण (लगभग) कति हुन्छ?","9.8 m/s²;98 m/s²;0.98 m/s²;6.67 m/s²","g ≈ 9.8 m/s² near the Earth's surface.","पृथ्वीको सतहनजिक g ≈ ९.८ m/s² हुन्छ।");
+E("medium","Ohm's law is expressed as?","ओमको नियम कसरी लेखिन्छ?","V = IR;V = I/R;I = VR;R = VI","Voltage = current × resistance.","विभवान्तर = धारा × प्रतिरोध।");
+E("easy","What is the SI unit of electrical resistance?","विद्युतीय प्रतिरोधको SI एकाइ के हो?","Ohm;Volt;Ampere;Watt","Resistance is measured in ohms (Ω).","प्रतिरोध ओम (Ω) मा नापिन्छ।");
+E("easy","How many chambers does the human heart have?","मानव मुटुमा कति वटा कोठा हुन्छन्?","4;2;3;5","The heart has two atria and two ventricles.","मुटुमा दुई एट्रिया र दुई भेन्ट्रिकल हुन्छन्।");
+E("medium","Which blood group is called the universal donor?","कुन रक्त समूहलाई सर्वदाता भनिन्छ?","O negative;AB positive;A positive;B negative","O negative can be given to almost all patients.","O नेगेटिभ रगत प्रायः सबैलाई दिन सकिन्छ।");
+E("easy","Which gas is necessary for burning (combustion)?","बल्नका लागि कुन ग्याँस आवश्यक हुन्छ?","Oxygen;Nitrogen;Carbon dioxide;Hydrogen","Combustion needs oxygen.","बल्नका लागि अक्सिजन चाहिन्छ।");
+E("medium","What is the valency of oxygen?","अक्सिजनको संयोजकता कति हो?","2;1;3;4","Oxygen has valency 2.","अक्सिजनको संयोजकता २ हो।");
+E("easy","In a right-angled triangle with sides 3 cm and 4 cm, the hypotenuse is?","३ सेमी र ४ सेमी भुजा भएको समकोण त्रिभुजको कर्ण कति हुन्छ?","5 cm;6 cm;7 cm;12 cm","3² + 4² = 25, so the hypotenuse is 5.","३² + ४² = २५, त्यसैले कर्ण ५ हुन्छ।");
+E("easy","The sum of the angles of a triangle is?","त्रिभुजका कोणहरूको योगफल कति हुन्छ?","180°;90°;360°;270°","The angles of a triangle add up to 180°.","त्रिभुजका तीन कोणको योग १८०° हुन्छ।");
+E("easy","The area of a circle with radius r is?","r अर्धव्यास भएको वृत्तको क्षेत्रफल कति हुन्छ?","πr²;2πr;πr;2πr²","Area of a circle = πr².","वृत्तको क्षेत्रफल = πr²।");
+E("medium","(a + b)² equals?","(a + b)² बराबर कति हुन्छ?","a² + 2ab + b²;a² + b²;a² − 2ab + b²;2a + 2b","Expansion: a² + 2ab + b².","विस्तार: a² + 2ab + b²।");
+E("medium","The roots of x² − 5x + 6 = 0 are?","x² − 5x + 6 = 0 का मूलहरू कुन हुन्?","2 and 3;1 and 6;−2 and −3;5 and 1","x² − 5x + 6 = (x − 2)(x − 3).","x² − 5x + 6 = (x − २)(x − ३)।");
+E("medium","The simple interest formula is?","साधारण ब्याजको सूत्र कुन हो?","PTR/100;P(1+R)ᵀ;P + TR;PR/T","SI = P × T × R ÷ 100.","साधारण ब्याज = P × T × R ÷ १००।");
+E("easy","The volume of a cube with side a is?","a भुजा भएको घनको आयतन कति हुन्छ?","a³;6a²;a²;4a","Volume of a cube = a × a × a.","घनको आयतन = a × a × a।");
+E("easy","The sum of the angles of a quadrilateral is?","चतुर्भुजका कोणहरूको योगफल कति हुन्छ?","360°;180°;270°;540°","The interior angles of any quadrilateral add up to 360°.","चतुर्भुजका आन्तरिक कोणको योग ३६०° हुन्छ।");
+E("easy","Nepal's three geographical regions from north to south are?","उत्तरदेखि दक्षिणसम्म नेपालका तीन भौगोलिक क्षेत्र कुन हुन्?","Himal, Pahad, Terai;Terai, Pahad, Himal;Himal, Terai, Pahad;Pahad, Himal, Terai","From north: Himal, Pahad (hills), Terai.","उत्तरतिरबाट हिमाल, पहाड, तराई।");
+E("easy","Which sentence is correct?","कुन वाक्य शुद्ध छ?","She goes to school every day.;She go to school every day.;She going to school every day.;She gone to school every day.","With 'she', the present simple verb takes -s: goes.","'she' सँग present simple मा verb मा -s/-es लाग्छ: goes।");
+E("medium","Choose the passive voice: 'He wrote a letter.'","Passive voice छान्नुहोस्: 'He wrote a letter.'","A letter was written by him.;A letter is written by him.;A letter has written by him.;He was written a letter.","Past simple passive = was/were + past participle.","Past simple passive = was/were + past participle।");
+E("easy","Which article goes before 'hour'?","'hour' अगाडि कुन article आउँछ?","an;a;the;no article","'Hour' starts with a vowel sound, so we say an hour.","'hour' स्वर ध्वनिबाट सुरु हुन्छ, त्यसैले an hour।");
+E("hard","The process by which plants lose water vapour through leaves is called?","बिरुवाका पातबाट पानीको वाष्प निस्कने प्रक्रियालाई के भनिन्छ?","Transpiration;Respiration;Photosynthesis;Germination","Transpiration is loss of water vapour through stomata.","स्टोमाटाबाट पानीको वाष्प निस्कनुलाई वाष्पोत्सर्जन भनिन्छ।");
+/* --- NEB (class 11-12 level) --- */
+const N=(d,en,ne,o,a,b)=>X("neb",d,en,ne,o,a,b);
+N("easy","What is the SI unit of electric charge?","विद्युतीय आवेशको SI एकाइ के हो?","Coulomb;Ampere;Volt;Farad","Charge is measured in coulombs (C).","आवेश कुलम्ब (C) मा नापिन्छ।");
+N("easy","What is the SI unit of capacitance?","धारिताको SI एकाइ के हो?","Farad;Henry;Tesla;Weber","Capacitance is measured in farads (F).","धारिता फाराड (F) मा नापिन्छ।");
+N("medium","Newton's second law of motion is written as?","न्युटनको दोस्रो गतिको नियम कसरी लेखिन्छ?","F = ma;F = mv;F = m/a;F = a/m","Force equals mass times acceleration.","बल = द्रव्यमान × त्वरण।");
+N("medium","The speed of light in vacuum is approximately?","शून्य स्थानमा प्रकाशको गति लगभग कति हुन्छ?","3 × 10⁸ m/s;3 × 10⁶ m/s;3 × 10¹⁰ m/s;3 × 10⁵ m/s","c ≈ 3 × 10⁸ m/s.","c ≈ ३ × १०⁸ m/s।");
+N("hard","Who explained the photoelectric effect using the photon theory?","फोटोन सिद्धान्त प्रयोग गरी फोटो-इलेक्ट्रिक प्रभावको व्याख्या कसले गरे?","Albert Einstein;Isaac Newton;Niels Bohr;J. J. Thomson","Einstein explained it in 1905 and won the 1921 Nobel Prize for it.","आइन्स्टाइनले सन् १९०५ मा यसको व्याख्या गरे र १९२१ मा नोबेल पुरस्कार पाए।");
+N("easy","Avogadro's number is approximately?","एभोगाड्रो संख्या लगभग कति हो?","6.022 × 10²³;6.022 × 10²⁰;3.0 × 10⁸;9.1 × 10⁻³¹","One mole contains 6.022 × 10²³ particles.","एक मोलमा ६.०२२ × १०²³ कण हुन्छन्।");
+N("medium","pH + pOH equals what at 25 °C?","२५ °C मा pH + pOH बराबर कति हुन्छ?","14;7;1;0","At 25 °C, pH + pOH = 14.","२५ °C मा pH + pOH = १४।");
+N("medium","What is the hybridization of carbon in methane (CH₄)?","मिथेन (CH₄) मा कार्बनको संकरण के हो?","sp³;sp²;sp;dsp²","Methane is tetrahedral with sp³ carbon.","मिथेन चतुष्फलकीय हुन्छ र कार्बन sp³ हुन्छ।");
+N("easy","What is the IUPAC name of CH₃CH₂OH?","CH₃CH₂OH को IUPAC नाम के हो?","Ethanol;Methanol;Propanol;Ethanal","Two carbons with an –OH group: ethanol.","दुई कार्बन र –OH समूह: इथानोल।");
+N("medium","Who proposed the double-helix model of DNA?","DNA को डबल हेलिक्स मोडल कसले प्रस्ताव गरे?","Watson and Crick;Mendel and Darwin;Hooke and Brown;Pasteur and Koch","Watson and Crick proposed it in 1953.","वाट्सन र क्रिकले सन् १९५३ मा प्रस्ताव गरे।");
+N("easy","How many chromosomes does a normal human body cell have?","सामान्य मानव कोषमा कति वटा क्रोमोजोम हुन्छन्?","46;23;44;48","Humans have 46 chromosomes (23 pairs).","मानिसमा ४६ क्रोमोजोम (२३ जोडा) हुन्छन्।");
+N("easy","Photosynthesis takes place in which organelle?","प्रकाश संश्लेषण कुन अङ्गकमा हुन्छ?","Chloroplast;Mitochondria;Golgi body;Lysosome","Chloroplasts contain chlorophyll.","क्लोरोप्लास्टमा क्लोरोफिल हुन्छ।");
+N("easy","The derivative of sin x is?","sin x को अवकलन कति हुन्छ?","cos x;−cos x;−sin x;tan x","d/dx (sin x) = cos x.","d/dx (sin x) = cos x।");
+N("easy","The derivative of x² is?","x² को अवकलन कति हुन्छ?","2x;x;x²;2","d/dx (xⁿ) = n·xⁿ⁻¹.","d/dx (xⁿ) = n·xⁿ⁻¹।");
+N("medium","∫ x dx equals?","∫ x dx बराबर कति हुन्छ?","x²/2 + C;x² + C;2x + C;x + C","Integral of x is x²/2 plus a constant.","x को समाकलन x²/२ + C हुन्छ।");
+N("medium","log(ab) equals?","log(ab) बराबर कति हुन्छ?","log a + log b;log a × log b;log a − log b;a log b","The log of a product is the sum of logs.","गुणनफलको लगको योग हुन्छ।");
+N("easy","What is i² (where i is the imaginary unit)?","i² (i काल्पनिक एकाइ) बराबर कति हुन्छ?","−1;1;0;i","By definition i = √−1, so i² = −1.","परिभाषाअनुसार i = √−१, त्यसैले i² = −१।");
+N("hard","The sum of the first n terms of an AP is?","समानान्तर श्रेणीका पहिलो n पदको योग कति हुन्छ?","n/2 [2a + (n−1)d];n[a + (n−1)d];a(rⁿ−1)/(r−1);n(n+1)","Sₙ = n/2 × (2a + (n − 1)d).","Sₙ = n/२ × (२a + (n − १)d)।");
+N("easy","sin²θ + cos²θ equals?","sin²θ + cos²θ बराबर कति हुन्छ?","1;0;2;tan²θ","This is the basic trigonometric identity.","यो आधारभूत त्रिकोणमितीय सर्वसमिका हो।");
+N("hard","The Heisenberg uncertainty principle relates which two quantities?","हाइजेनबर्गको अनिश्चितता सिद्धान्तले कुन दुई राशिबीच सम्बन्ध देखाउँछ?","Position and momentum;Mass and energy;Charge and mass;Time and distance","We cannot know both position and momentum exactly.","स्थिति र संवेग दुवै ठ्याक्कै जान्न सकिँदैन।");
+N("medium","Which enzyme unwinds the DNA double helix during replication?","प्रतिकृतिका बेला DNA को डबल हेलिक्स कुन इन्जाइमले खोल्छ?","Helicase;DNA ligase;Amylase;Catalase","Helicase breaks hydrogen bonds between base pairs.","हेलिकेजले आधार जोडीबीचको हाइड्रोजन बन्धन तोड्छ।");
+N("medium","Le Chatelier's principle is about?","ल्य शातलिएको सिद्धान्त केसँग सम्बन्धित छ?","Shifting of chemical equilibrium;Speed of light;Gene mutation;Electric field","A system at equilibrium shifts to oppose a change.","सन्तुलनमा रहेको प्रणालीले परिवर्तनको विरोध गर्ने दिशामा सर्छ।");
+N("hard","The determinant of the matrix [[2, 3], [1, 4]] is?","[[2, 3], [1, 4]] म्याट्रिक्सको सारणिक कति हुन्छ?","5;11;8;−5","2×4 − 3×1 = 5.","२×४ − ३×१ = ५।");
+N("medium","In a series RLC circuit at resonance, the impedance is?","श्रेणी RLC परिपथमा अनुनादमा प्रतिबाधा कति हुन्छ?","Minimum (equal to R);Maximum;Zero;Infinite","At resonance X_L = X_C, so Z = R.","अनुनादमा X_L = X_C हुन्छ, त्यसैले Z = R।");
+})();
+
 /* Photo Quiz questions. For a real photo add img:"https://..." or a local file path like img:"photos/tiger.jpg" */
 Q.push(
 {c:"pic",d:"easy",em:"🇳🇵",q:{en:"Whose flag is this?",hi:"यह किस देश का झंडा है?",ne:"यो कुन देशको झण्डा हो?"},o:["Nepal","Bhutan","India","Sri Lanka"],a:0,e:{en:"This is Nepal's flag. 💡 Fact: it is the only national flag in the world that is not a rectangle.",hi:"यह नेपाल का झंडा है। 💡 तथ्य: यह दुनिया का अकेला राष्ट्रीय झंडा है जो आयताकार नहीं है।",ne:"यो नेपालको झण्डा हो। 💡 तथ्य: यो संसारको एक मात्र राष्ट्रिय झण्डा हो जुन आयताकार छैन।"}},
@@ -867,13 +954,13 @@ Q.push(
 /* ========== COINS: Daily, Spin, Shop, Power-ups ========== */
 /* ========== SMART LEARNING REPORT / BOOKMARKS / FRIEND CHALLENGE ========== */
 function qkey(q){return q._k||(q._k=hsh(q.q.en+"|"+q.o.join("|")))}
-const CN={gk:"GK",sci:"Science",math:"Maths",eng:"English",pic:"Photo Quiz",kids:"Kids Fun",online:"Online (AI)"};
+const CN={gk:"GK",sci:"Science",math:"Maths",eng:"English",pic:"Photo Quiz",kids:"Kids Fun",lok:"Loksewa",see:"SEE",neb:"NEB",online:"Online (AI)"};
 function recStat(q,ok){try{const p=load();const k=q.c||"other";p.cs=p.cs||{};const o=p.cs[k]||{r:0,t:0};o.t++;if(ok)o.r++;p.cs[k]=o;
  if(q.c!=="online"){const key=qkey(q);p.mist=(p.mist||[]).filter(x=>x!==key);if(!ok)p.mist.unshift(key);p.mist=p.mist.slice(0,40)}
  save(p)}catch(e){}}
-function poolOK(x){if(cfg.cat==="saved"||cfg.cat==="mist")return !!PSET&&x.c!=="online"&&PSET.has(qkey(x));if(cfg.cat==="all")return isKid()?(x.c==="kids"||x.d==="easy"):x.c!=="kids";return x.c===cfg.cat&&(!isKid()||x.c==="kids"||x.d==="easy")}
-function practice(c){const p=load();PSET=new Set(c==="saved"?(p.bm||[]):(c==="mist"?(p.mist||[]):[]));if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=null;ROUND=8;cfg.cat=c;cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="smart";startGame()}
-function report(){const p=load();const cs=p.cs||{};const order=["gk","sci","math","eng","pic","kids","online"];
+function poolOK(x){if(cfg.cat==="saved"||cfg.cat==="mist")return !!PSET&&x.c!=="online"&&PSET.has(qkey(x));if(cfg.cat==="all")return isKid()?(x.c==="kids"||(x.d==="easy"&&!EX.includes(x.c))):x.c!=="kids";return x.c===cfg.cat&&(!isKid()||x.c==="kids"||x.d==="easy")}
+function practice(c){const p=load();PSET=new Set(c==="saved"?(p.bm||[]):(c==="mist"?(p.mist||[]):[]));if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=null;SURV=false;ROUND=8;cfg.cat=c;cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="smart";startGame()}
+function report(){const p=load();const cs=p.cs||{};const order=["gk","sci","math","eng","pic","kids","lok","see","neb","online"];
  const rows=order.filter(k=>cs[k]&&cs[k].t>0).map(k=>{const o=cs[k],a=Math.round(o.r/o.t*100),col=a>=70?"#22c55e":a>=40?"#fbbf24":"#ef4444";
   return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:14px"><b>${CN[k]}</b><span>${o.r}/${o.t} · ${a}%</span></div><div style="height:10px;border-radius:6px;background:#1b2552;overflow:hidden"><i style="display:block;height:100%;width:${a}%;background:${col}"></i></div></div>`}).join("");
  const weak=order.filter(k=>k!=="online"&&cs[k]&&cs[k].t>=3&&cs[k].r/cs[k].t<0.7).sort((a,b)=>cs[a].r/cs[a].t-cs[b].r/cs[b].t);
@@ -901,7 +988,7 @@ function chSet(seed){const r=rng(seed),idx=Q.map((q,i)=>i),out=[];
 function multi(){if(isKid()){app.innerHTML=`<h1>⚔️ Multiplayer</h1><div class="card"><div class="bubble">🔒 Friend challenges are for ages 13+. Ask a parent to play together!</div></div><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home");return}
  app.innerHTML=`<h1>⚔️ Multiplayer Battle</h1><div class="card"><div class="bubble">Challenge a friend: you play 5 questions, then send the link. Your friend plays the <b>same 5 questions</b>, and you both see who wins!</div></div><button class="btn" onclick="chNew()">⚔️ Create Challenge</button><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
 function chNew(){chStart({seed:1+Math.floor(Math.random()*999999),mode:"create",s:null,n:""})}
-function chStart(o){if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=o;ROUND=5;cfg.cat="all";cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="easy";startGame()}
+function chStart(o){if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=o;SURV=false;ROUND=5;cfg.cat="all";cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="easy";startGame()}
 function chLink(seed,sc){const base=location.href.split("?")[0].split("#")[0];return base+"?ch="+seed+"&s="+sc+"&n="+encodeURIComponent((pname()||"Player").slice(0,14))}
 function chResult(){const me=S.right,card=document.createElement("div");card.className="card";let h="";
  if(FIX.mode==="play"){const o=FIX.s,n=esc(FIX.n||"Friend");h=`<div class="big">${me} vs ${o}</div><div class="exp"><b>${me>o?"🎉 You beat "+n+"!":me===o?"🤝 Draw with "+n+"!":"😅 "+n+" wins this time"}</b></div><div class="exp">Send your score back:</div>`}
@@ -915,11 +1002,35 @@ function readCh(){try{const q=new URLSearchParams(location.search);const seed=pa
 function checkCh(){if(!PENDING_CH||!ageG()||isKid())return;const o=PENDING_CH;PENDING_CH=null;
  app.innerHTML=`<h1>⚔️ Challenge!</h1><div class="card"><div class="big">${esc(o.n||"A friend")} scored ${o.s}/5</div><div class="bubble">Can you beat them? Play the same 5 questions.</div></div><button class="btn" onclick="chStart(${JSON.stringify(o).replace(/"/g,'&quot;')})">⚔️ Accept Challenge</button><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
 
+/* ========== SURVIVAL / EXAM PACKS / SHARE CARD / INSTALL ========== */
+function survival(){if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=null;SURV=true;ROUND=9999;cfg.cat="all";cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="smart";startGame()}
+function exams(){const cnt=k=>Q.filter(x=>x.c===k).length;const P=[["lok","🏛️","Loksewa","Nepal GK, civics, history, geography"],["see","📘","SEE (Class 10)","Science, Maths, Social, English"],["neb","🎓","NEB (Class 11–12)","Physics, Chemistry, Biology, Maths"]];
+ app.innerHTML=`<h1>🎓 Exam Packs</h1><div class="card"><div class="bubble">Practice real exam-style questions with explanations. 10 questions per round.</div></div><div class="sgrid" style="grid-template-columns:1fr">`+P.map(x=>`<div class="si"><div class="ic">${x[1]}</div><b>${x[2]}</b><small>${x[3]} · ${cnt(x[0])} questions</small><button class="buy" onclick="startExam('${x[0]}')">Start practice</button></div>`).join("")+`</div><button class="btn sec" onclick="home()">${t('home')}</button>`;addNav("home")}
+function startExam(k){if(!CFG0)CFG0=Object.assign({},cfg);LV=null;FIX=null;SURV=false;ROUND=10;cfg.cat=k;cfg.mode="teacher";cfg.online=false;cfg.bet="0";cfg.diff="smart";startGame()}
+function isStandalone(){try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone}catch(e){return false}}
+function installBtn(){return (isNative()||isStandalone())?"":`<button class="btn sec" id="instb" onclick="installApp()">📲 Add to Home Screen</button>`}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFER_PWA=e});
+function installApp(){if(DEFER_PWA){DEFER_PWA.prompt();DEFER_PWA=null}else alert(cfg.lang==="en"?"Open the Chrome menu (⋮) and tap 'Add to Home screen'.":"Chrome मेन्यू (⋮) खोलकर 'Add to Home screen' दबाओ / थिच्नुहोस्।")}
+function shareCard(){const R=LASTR||{you:0,n:0,acc:0},kid=isKid(),cv=document.createElement("canvas");cv.width=1080;cv.height=1080;const g=cv.getContext("2d");
+ const bg=g.createLinearGradient(0,0,1080,1080);bg.addColorStop(0,"#1b3cff");bg.addColorStop(.5,"#0b1240");bg.addColorStop(1,"#05070f");g.fillStyle=bg;g.fillRect(0,0,1080,1080);
+ g.strokeStyle="#38d6ff";g.lineWidth=10;g.strokeRect(30,30,1020,1020);
+ g.textAlign="center";g.fillStyle="#ffc933";g.font="bold 84px system-ui,sans-serif";g.fillText("AI QUIZ BATTLE",540,170);
+ g.fillStyle="#cfe3ff";g.font="40px system-ui,sans-serif";g.fillText("Play · Learn · Win",540,230);
+ g.font="150px system-ui,sans-serif";g.fillText(R.sv!=null?"⚡":R.acc>=90?"👑":R.acc>=70?"⭐":"🔥",540,420);
+ g.fillStyle="#fff";g.font="bold 230px system-ui,sans-serif";g.fillText(R.sv!=null?String(R.sv):R.you+"/"+R.n,540,650);
+ g.fillStyle="#38d6ff";g.font="bold 56px system-ui,sans-serif";g.fillText(R.sv!=null?"Survival: correct in a row":R.acc+"% accuracy"+(R.lv?" · Level "+R.lv:""),540,740);
+ if(!kid){g.fillStyle="#ffffff";g.font="bold 54px system-ui,sans-serif";g.fillText((pname()||"Player").slice(0,20),540,840)}
+ g.fillStyle="#ffc933";g.font="bold 48px system-ui,sans-serif";g.fillText("Can you beat me? 🔥",540,930);
+ g.fillStyle="#9fb0d8";g.font="36px system-ui,sans-serif";g.fillText((GAME_URL||location.host||"").replace(/^https?:\/\//,"").slice(0,48),540,1000);
+ cv.toBlob(async b=>{if(!b)return;const f=new File([b],"quiz-result.png",{type:"image/png"});
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:"Can you beat my score? "+(GAME_URL||location.origin)});return}}catch(e){if(e&&e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="quiz-result.png";document.body.appendChild(a);a.click();a.remove()},"image/png")}
+
 function today(d){return (d||new Date()).toLocaleDateString('en-CA')}
 function toast(m){home();const d=document.createElement("div");d.className="card";d.innerHTML="<div class='big' style='font-size:22px'>"+m+"</div>";app.prepend(d)}
 function daily(){const p=load();const td=today();if(p.day===td)return toast(c('claimed'));
  const y=today(new Date(Date.now()-864e5));p.dstreak=(p.day===y)?p.dstreak+1:1;
- const r=20+10*Math.min(p.dstreak-1,6);p.coins+=r;p.day=td;save(p);snd("coin");toast(`🎁 +${r} 🪙 · ${c('streak')} ${p.dstreak}`)}
+ const r=20+10*Math.min(p.dstreak-1,6)+(p.dstreak%7===0?100:0);p.coins+=r;p.day=td;save(p);snd("coin");toast(`🎁 +${r} 🪙 · ${c('streak')} ${p.dstreak}`)}
 function spin(){const p=load();const free=p.spin!==today();if(isKid()&&!free)return toast("🎰 Come back tomorrow for your free spin!");
  if(!free&&p.coins<30)return toast(c('nocoin'));
  if(!free)p.coins-=30;p.spin=today();save(p);
@@ -936,7 +1047,7 @@ const AVE={royal:"👑",hero:"🦸",robot:"🤖"},NSKIN=["blue","gold","green","
 function shop(tab){if(tab)SHOPTAB=tab;const p=load(),kid=isKid();
  const tabs=[["pu","⚡ Power-ups"],["cu","🎨 Customize"],["rw","🎁 Rewards"]].map(x=>`<div class="chip ${SHOPTAB===x[0]?'on':''}" style="flex:1;text-align:center;padding:9px 2px;font-size:13px;white-space:nowrap" onclick="shop('${x[0]}')">${x[1]}</div>`).join("");
  let body="";
- if(SHOPTAB==="rw"){body=`<div class="sgrid">
+ if(SHOPTAB==="rw"){const yd=today(new Date(Date.now()-864e5)),sk=(p.day===today()||p.day===yd)?(p.dstreak||0):0,kk=sk>0&&sk%7===0?7:sk%7;body=`<div class="card"><div class="lbl">🔥 Daily streak: ${sk} day${sk===1?"":"s"}</div><div class="row">${[1,2,3,4,5,6,7].map(i=>`<div class="chip ${i<=kk?"on":""}" style="flex:1;text-align:center;padding:8px 0">${i===7?"🎁":"🔥"}<br><small>${i}</small></div>`).join("")}</div><div class="exp">Play daily: day 7 gives <b>+100 bonus coins</b>!</div></div><div class="sgrid">
   <div class="si"><div class="ic">🎁</div><b>Daily Reward</b><small>Free coins every day${p.day===today()?' · claimed ✅':''}</small><button class="buy" onclick="daily()">Claim</button></div>
   <div class="si"><div class="ic">🎰</div><b>Lucky Spin</b><small>${p.spin!==today()?'Free spin ready!':'Come back tomorrow'}</small><button class="buy" onclick="spin()">Spin</button></div>
   <div class="si"><div class="ic">🎯</div><b>Level Rewards</b><small>Clear levels to earn coins · ${cleared(p)}/${MAXLV}</small><button class="buy" onclick="levels()">Play</button></div>

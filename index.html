@@ -230,7 +230,7 @@ function home(){LV=null;FIX=null;SURV=false;ROUND=8;if(CFG0){Object.assign(cfg,C
   <div class="chars"><label>${bigPh()}<input type="file" accept="image/*" style="display:none" onchange="upPhoto(this)"></label>${avatar('happy')}</div>
   <div class="ttl"><div class="tc">👑</div><div class="a">AI QUIZ</div><div class="b">BATTLE</div><div class="c">Play · Learn · Win</div></div></div>
  <div class="prof"><div class="pf"><span class="crown">👑</span><label>${phHTML(72)}<input type="file" accept="image/*" style="display:none" onchange="upPhoto(this)"></label></div>
-  <div class="pinfo"><div class="nm">${esc(pname()||"Player")}</div><div class="lv">🛡️ Level ${x.lv}</div><div class="xp"><div class="bar2"><i style="width:${x.cur/5}%"></i></div>${x.cur} / 500 XP</div></div>
+  <div class="pinfo"><div class="nm">${esc(pname()||"Player")}</div><div class="lv">🛡️ Level ${Math.min(p.lvl,MAXLV)} · Rank ${x.lv}</div><div class="xp"><div class="bar2"><i style="width:${x.cur/5}%"></i></div>${x.cur} / 500 XP</div></div>
   <div class="coinbox"><div class="n">🪙 ${p.coins}</div><div class="l">Coins</div><button class="plus" onclick="shop()">+</button></div></div>
  <div class="tiles">`+T6.map(a=>`<div class="tile ${a[2]}" onclick="quick('${a[0]}','${a[1]}')"><span class="ic">${a[3]}</span>${a[4]}<small>${a[5]}</small><span class="go">›</span></div>`).join("")+`</div>
  <div class="tiles"><div class="tile big3 t-rep" onclick="report()"><span class="ic">📊</span>Smart Learning Report<small>Track Progress &amp; Find Weak Topics</small></div><div class="tile big3 t-mp" onclick="multi()"><span class="ic">👥</span>Multiplayer Battle<small>Challenge Friends</small></div><div class="tile big3 t-bm" onclick="bookmarks()"><span class="ic">🔖</span>Bookmark Questions<small>Save Favorite Questions</small></div></div>
@@ -270,7 +270,7 @@ function achievements(){const p=load();
 function profile(){const p=load(),x=xpInfo(p);
  app.innerHTML=`<h1>👤 Profile</h1><div class="card" style="text-align:center"><label style="cursor:pointer">${phHTML(96)}<input type="file" accept="image/*" style="display:none" onchange="upPhoto(this)"></label>
  <div class="lbl" style="text-align:left">Name</div><input class="inp" value="${esc(pname())}" maxlength="14" placeholder="Player" oninput="setName(this.value)">
- <div class="score" style="margin-top:12px"><div><b>${x.lv}</b>Level</div><div><b>${p.games}</b>${t('games')}</div><div><b>${p.best}</b>${t('best')}</div></div>
+ <div class="score" style="margin-top:12px"><div><b>${Math.min(p.lvl,MAXLV)}</b>Level</div><div><b>${x.lv}</b>XP Rank</div><div><b>${p.games}</b>${t('games')}</div><div><b>${p.best}</b>${t('best')}</div></div>
  <div class="score" style="margin-top:8px"><div><b>${p.total?Math.round(p.right/p.total*100):0}%</b>${t('acc')}</div><div><b>${p.coins}</b>Coins</div><div><b>${cleared(p)}/${MAXLV}</b>Levels</div></div></div>
  ${acctHTML()}<button class="btn" onclick="shop()">🛒 ${c('shop')}</button>${isKid()?'':'<button class="btn sec" onclick="invite()">🎁 Invite</button>'}<button class="btn sec" onclick="settings()">⚙️ Settings</button>`;
  addNav("pro")}

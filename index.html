@@ -197,7 +197,7 @@ let ROUND=8;const TIME=15;
 function t(k){return T[cfg.lang][k]}
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function hsh(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
-function load(){const d={games:0,best:0,total:0,right:0,coins:50,day:"",dstreak:0,spin:"",fifty:1,time:1,skin:"blue",skins:["blue"],lvl:1,stars:{},refc:0,refd:0,bm:[],mist:[],cs:{},hint:0,skip:0,life:0,shield:0,own:[],av:"",fr:false};
+function load(){const d={games:0,best:0,total:0,right:0,coins:50,day:"",dstreak:0,spin:"",fifty:1,time:1,skin:"blue",skins:["blue"],lvl:1,stars:{},refc:0,refd:0,bm:[],mist:[],rm:[],cs:{},hint:0,skip:0,life:0,shield:0,own:[],av:"",fr:false};
  try{const raw=localStorage.getItem("nex_prog");if(!raw)return d;
   const sig=localStorage.getItem("nex_sig");if(sig&&sig!==hsh(raw+"nexQ#7"))return d; /* edited by hand -> reset */
   const o=Object.assign(d,JSON.parse(raw));o.coins=Math.max(0,Math.min(1e6,Math.floor(Number(o.coins)||0)));return o}catch(e){return d}}
@@ -612,10 +612,18 @@ function startLevel(n){if(!CFG0)CFG0=Object.assign({},cfg);
 const GAME_URL="";
 function invite(){const p=load();const base=GAME_URL||location.href.split("?")[0].split("#")[0];const link=base+"?ref="+pid();
  window._lnk=link;window._tx={hi:"NEXbrain से AI QUIZ BATTLE खेलो और 50 🪙 पाओ!",en:"Play AI QUIZ BATTLE vs NEXbrain and get 50 🪙!",ne:"NEXbrain सँग AI QUIZ BATTLE खेल्नुहोस् र ५० 🪙 पाउनुहोस्!"}[cfg.lang];
- const how={hi:"दोस्त तुम्हारे लिंक से पहली बार खेले तो <b>दोनों को +50 🪙</b> (अधिकतम 10 दोस्त)।",en:"When a friend plays for the first time with your link, <b>both get +50 🪙</b> (max 10 friends).",ne:"साथीले तपाईंको लिंकबाट पहिलो पटक खेल्दा <b>दुवैलाई +५० 🪙</b> (अधिकतम १० साथी)।"}[cfg.lang];
+ const how={hi:"दोस्त तुम्हारे लिंक से पहली बार खेले तो <b>दोनों को +50 🪙</b> (अधिकतम 100 दोस्त)।",en:"When a friend plays for the first time with your link, <b>both get +50 🪙</b> (max 100 friends).",ne:"साथीले तपाईंको लिंकबाट पहिलो पटक खेल्दा <b>दुवैलाई +५० 🪙</b> (अधिकतम १०० साथी)।"}[cfg.lang];
  const warn=(!GAME_URL&&location.protocol==="file:")?`<div class="exp" style="border-color:#fbbf24">⚠️ Host the game first and set <b>GAME_URL</b> in the file. A local file link will not work for friends.</div>`:"";
  const warn2=!DB_URL?`<div class="exp" style="border-color:#fbbf24">⚠️ ${setupTxt()}</div>`:"";
- app.innerHTML=`<h1>🎁 Invite</h1><div class="card"><div class="exp">${how}<br>👥 ${p.refc}/10</div><div class="exp" style="word-break:break-all">${esc(link)}</div>${warn}${warn2}${(authReady()&&!USER)?'<div class="exp" style="border-color:#fbbf24">⚠️ Sign in with Google (Profile tab) first, so your invites count.</div>':''}<button class="btn" onclick="shareLink()">📤 Share Link</button><button class="btn sec" onclick="copyTxt(window._lnk)">📋 Copy Link</button><button class="btn sec" onclick="claimRefs()">🔄 Check rewards</button></div><button class="btn sec" onclick="home()">${t('home')}</button>`}
+ app.innerHTML=`<h1>🎁 Invite</h1><div class="card"><div class="exp">${how}<br>👥 ${p.refc}/100</div>${msHTML(p)}<div class="exp" style="word-break:break-all">${esc(link)}</div>${warn}${warn2}${(authReady()&&!USER)?'<div class="exp" style="border-color:#fbbf24">⚠️ Sign in with Google (Profile tab) first, so your invites count.</div>':''}<button class="btn" onclick="shareLink()">📤 Share Link</button><button class="btn sec" onclick="copyTxt(window._lnk)">📋 Copy Link</button><button class="btn sec" onclick="claimRefs()">🔄 Check rewards</button></div><button class="btn sec" onclick="home()">${t('home')}</button>`}
+/* ===== INVITE MILESTONES ===== */
+const MS=[[1,"🎁","🪙 100",{coins:100}],[10,"🎖️","🪙 500 + 2× Extra Life",{coins:500,life:2}],[20,"🏅","🪙 1000 + 3× Shield + 👑 Royal Avatar",{coins:1000,shield:3,own:"royal"}],[100,"🏆","🪙 5000 + 🖼️ Neon Frame + 🦸 Hero Skin",{coins:5000,own:"frame,hero"}]];
+function msHTML(p){const rm=p.rm||[];return `<div class="lbl" style="margin-top:10px">🏆 Friend rewards</div>`+MS.map(m=>{const ok=p.refc>=m[0],done=rm.includes(m[0]);const pct=Math.min(100,Math.round(p.refc/m[0]*100));
+ return `<div class="exp"><b>${m[1]} ${m[0]} friend${m[0]>1?"s":""}</b> → ${m[2]}<div class="bar2" style="margin:6px 0"><i style="width:${pct}%"></i></div>${done?"✅ Claimed":ok?`<button class="buy" onclick="claimMs(${m[0]})">🎉 Claim reward</button>`:`${p.refc}/${m[0]}`}</div>`}).join("")}
+function claimMs(n){const p=load(),m=MS.find(x=>x[0]===n);p.rm=p.rm||[];if(!m||p.refc<n||p.rm.includes(n))return;p.rm.push(n);const r=m[3];
+ if(r.coins)p.coins+=r.coins;if(r.life)p.life=(p.life||0)+r.life;if(r.shield)p.shield=(p.shield||0)+r.shield;
+ if(r.own){p.own=p.own||[];r.own.split(",").forEach(k=>{if(!p.own.includes(k))p.own.push(k);if(k==="royal")p.av="👑";if(k==="hero")p.av="🦸";if(k==="frame")p.fr=true})}
+ save(p);snd("win");invite();toast("🎉 "+m[2])}
 function copyTxt(t){try{navigator.clipboard.writeText(t).then(()=>alert("Link copied ✅"),()=>prompt("Copy this link:",t))}catch(e){prompt("Copy this link:",t)}}
 function siteLink(){return GAME_URL||(location.origin+location.pathname).replace(/index\.html$/,"")}
 function shareLink(){if(navigator.share)navigator.share({text:window._lnk}).catch(()=>{});else copyTxt(window._lnk)}
@@ -623,7 +631,7 @@ function copyLink(){copyTxt(siteLink())}
 function shareLink2(){const l=siteLink();if(navigator.share)navigator.share({text:l}).catch(()=>{});else copyTxt(l)}
 async function claimRefs(silent){if(isKid())return;
  if(!DB_URL){if(!silent)toast(setupTxt());return}
- try{const r=await fetch(`${dbu()}/ref/${pid()}.json`);const j=(await r.json())||{};const n=Math.min(Object.keys(j).length,10);const p=load();const add=n-p.refc;
+ try{const r=await fetch(`${dbu()}/ref/${pid()}.json`);const j=(await r.json())||{};const n=Math.min(Object.keys(j).length,100);const p=load();const add=n-p.refc;
   if(add>0){p.coins+=50*add;p.refc=n;save(p);snd("coin");toast(`🎁 +${50*add} 🪙 (${add} friend)`)}else if(!silent)toast("0 🎁")}
  catch(e){if(!silent)toast(t('offl'))}}
 const REFRE=/^[A-Za-z0-9_-]{4,40}$/;

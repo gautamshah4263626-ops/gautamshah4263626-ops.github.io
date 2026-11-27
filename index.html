@@ -398,6 +398,7 @@ function result(){
  <div class="exp">🪙 +${S.coins} ${c('earned')}${betMsg?' · '+betMsg:''} · ${c('total')}: ${p.coins}${lvMsg?'<br><b>'+lvMsg+'</b>':''}</div>${SURV?`<div class="exp">⚡ Survival: <b>${S.right}</b> correct · Best: <b>${p.sv}</b></div>`:''}
  <div class="lbl">${t('rep')}</div><div class="exp">${t('tip')}: ${tip}</div></div>${adBanner()}
  <button class="btn sec" onclick="shareCard()">📸 Share Result Card</button>
+ <button class="btn sec" onclick="shareLink2()">🔗 Share Link</button>
  ${LV?((S.lvPass&&LV<MAXLV?`<button class="btn" onclick="startLevel(${LV+1})">Next Level ➜</button>`:'')+`<button class="btn ${S.lvPass&&LV<MAXLV?'sec':''}" onclick="startLevel(${LV})">🔁 Retry</button><button class="btn sec" onclick="levels()">🎯 Levels</button>`):`<button class="btn" onclick="startGame()">${t('again')}</button>`}<button class="btn sec" onclick="home()">${t('home')}</button>`;
  if(FIX)chResult();
 }
@@ -415,8 +416,7 @@ function lbGet(){try{return JSON.parse(localStorage.getItem("nex_lb"))||[]}catch
 function lbAdd(s,n,acc){const l=lbGet();l.push({n:pname()||"Player",s:s,q:n,acc:acc,d:today()});l.sort((a,b)=>b.s-a.s||b.acc-a.acc);try{localStorage.setItem("nex_lb",JSON.stringify(l.slice(0,10)))}catch(e){}}
 function board0(){const l=lbGet();
  app.innerHTML=`<h1>🏆 Leaderboard</h1><div class="row" style="margin-bottom:8px"><div class="chip on">📱 Local</div>${isKid()?'':'<div class="chip" onclick="boardOnline()">🌍 Online</div>'}</div><div class="card">`+(l.length?l.map((x,i)=>`<div class="opt" style="cursor:default">${["🥇","🥈","🥉"][i]||(i+1)+"."} <b>${x.n}</b> — ${x.s}/${x.q} (${x.acc}%) <small>${x.d}</small></div>`).join(""):`<div class="bubble">—</div>`)+`</div><button class="btn" onclick="share()">📤 Share</button><button class="btn sec" onclick="home()">${t('home')}</button>`}
-function share(){const l=lbGet()[0];const tx=`AI QUIZ BATTLE 🎮 ${pname()||"Me"}: ${l?l.s+"/"+l.q+" ("+l.acc+"%)":""} – Can you beat NEXbrain?`;
- if(navigator.share)navigator.share({text:tx}).catch(()=>{});else{try{navigator.clipboard.writeText(tx);alert("Copied!")}catch(e){alert(tx)}}}
+function share(){const tx=siteLink();if(navigator.share)navigator.share({text:tx}).catch(()=>{});else copyTxt(tx)}
 
 /* ========== MORE QUESTIONS (118) ==========
  A(category, difficulty, "en|hi|ne question", "opt1;opt2;opt3;opt4", correctIndex, "en|hi|ne explanation")
@@ -615,8 +615,12 @@ function invite(){const p=load();const base=GAME_URL||location.href.split("?")[0
  const how={hi:"दोस्त तुम्हारे लिंक से पहली बार खेले तो <b>दोनों को +50 🪙</b> (अधिकतम 10 दोस्त)।",en:"When a friend plays for the first time with your link, <b>both get +50 🪙</b> (max 10 friends).",ne:"साथीले तपाईंको लिंकबाट पहिलो पटक खेल्दा <b>दुवैलाई +५० 🪙</b> (अधिकतम १० साथी)।"}[cfg.lang];
  const warn=(!GAME_URL&&location.protocol==="file:")?`<div class="exp" style="border-color:#fbbf24">⚠️ Host the game first and set <b>GAME_URL</b> in the file. A local file link will not work for friends.</div>`:"";
  const warn2=!DB_URL?`<div class="exp" style="border-color:#fbbf24">⚠️ ${setupTxt()}</div>`:"";
- app.innerHTML=`<h1>🎁 Invite</h1><div class="card"><div class="exp">${how}<br>👥 ${p.refc}/10</div><div class="exp" style="word-break:break-all">${esc(link)}</div>${warn}${warn2}${(authReady()&&!USER)?'<div class="exp" style="border-color:#fbbf24">⚠️ Sign in with Google (Profile tab) first, so your invites count.</div>':''}<button class="btn" onclick="shareLink()">📤 Share Link</button><button class="btn sec" onclick="claimRefs()">🔄 Check rewards</button></div><button class="btn sec" onclick="home()">${t('home')}</button>`}
-function shareLink(){const tx=window._tx+" "+window._lnk;if(navigator.share)navigator.share({text:window._tx,url:window._lnk}).catch(()=>{});else{try{navigator.clipboard.writeText(tx);alert("Copied!")}catch(e){alert(tx)}}}
+ app.innerHTML=`<h1>🎁 Invite</h1><div class="card"><div class="exp">${how}<br>👥 ${p.refc}/10</div><div class="exp" style="word-break:break-all">${esc(link)}</div>${warn}${warn2}${(authReady()&&!USER)?'<div class="exp" style="border-color:#fbbf24">⚠️ Sign in with Google (Profile tab) first, so your invites count.</div>':''}<button class="btn" onclick="shareLink()">📤 Share Link</button><button class="btn sec" onclick="copyTxt(window._lnk)">📋 Copy Link</button><button class="btn sec" onclick="claimRefs()">🔄 Check rewards</button></div><button class="btn sec" onclick="home()">${t('home')}</button>`}
+function copyTxt(t){try{navigator.clipboard.writeText(t).then(()=>alert("Link copied ✅"),()=>prompt("Copy this link:",t))}catch(e){prompt("Copy this link:",t)}}
+function siteLink(){return GAME_URL||(location.origin+location.pathname).replace(/index\.html$/,"")}
+function shareLink(){if(navigator.share)navigator.share({text:window._lnk}).catch(()=>{});else copyTxt(window._lnk)}
+function copyLink(){copyTxt(siteLink())}
+function shareLink2(){const l=siteLink();if(navigator.share)navigator.share({text:l}).catch(()=>{});else copyTxt(l)}
 async function claimRefs(silent){if(isKid())return;
  if(!DB_URL){if(!silent)toast(setupTxt());return}
  try{const r=await fetch(`${dbu()}/ref/${pid()}.json`);const j=(await r.json())||{};const n=Math.min(Object.keys(j).length,10);const p=load();const add=n-p.refc;
@@ -999,7 +1003,7 @@ function chLink(seed,sc){const base=location.href.split("?")[0].split("#")[0];re
 function chResult(){const me=S.right,card=document.createElement("div");card.className="card";let h="";
  if(FIX.mode==="play"){const o=FIX.s,n=esc(FIX.n||"Friend");h=`<div class="big">${me} vs ${o}</div><div class="exp"><b>${me>o?"🎉 You beat "+n+"!":me===o?"🤝 Draw with "+n+"!":"😅 "+n+" wins this time"}</b></div><div class="exp">Send your score back:</div>`}
  else h=`<div class="big">⚔️ ${me}/5</div><div class="exp">Send this challenge to a friend. They play the same 5 questions!</div>`;
- const link=chLink(FIX.seed,me),tx={hi:`मैंने AI QUIZ BATTLE चैलेंज में ${me}/5 स्कोर किया! क्या तुम हरा सकते हो? 🔥`,en:`I scored ${me}/5 in an AI QUIZ BATTLE challenge! Can you beat me? 🔥`,ne:`मैले AI QUIZ BATTLE च्यालेन्जमा ${me}/5 स्कोर गरें! के तिमी हराउन सक्छौ? 🔥`}[cfg.lang]+" "+link;
+ const link=chLink(FIX.seed,me),tx0={hi:`मैंने AI QUIZ BATTLE चैलेंज में ${me}/5 स्कोर किया! क्या तुम हरा सकते हो? 🔥`,en:`I scored ${me}/5 in an AI QUIZ BATTLE challenge! Can you beat me? 🔥`,ne:`मैले AI QUIZ BATTLE च्यालेन्जमा ${me}/5 स्कोर गरें! के तिमी हराउन सक्छौ? 🔥`}[cfg.lang],tx=link;
  h+=`<a class="btn" style="display:block;text-align:center;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(tx)}">📤 Share on WhatsApp</a><button class="btn sec" onclick="navigator.clipboard&&navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(link)}')).then(()=>{this.textContent='Copied ✅'})">📋 Copy link</button>`;
  card.innerHTML=h;const f=app.querySelector("h1");if(f)f.after(card)}
 function readCh(){try{const q=new URLSearchParams(location.search);const seed=parseInt(q.get("ch"),10);if(!(seed>0&&seed<=999999))return;let sc=parseInt(q.get("s"),10);if(!(sc>=0&&sc<=5))sc=0;
@@ -1029,7 +1033,7 @@ function shareCard(){const R=LASTR||{you:0,n:0,acc:0},kid=isKid(),cv=document.cr
  g.fillStyle="#ffc933";g.font="bold 48px system-ui,sans-serif";g.fillText("Can you beat me? 🔥",540,930);
  g.fillStyle="#9fb0d8";g.font="36px system-ui,sans-serif";g.fillText((GAME_URL||location.host||"").replace(/^https?:\/\//,"").slice(0,48),540,1000);
  cv.toBlob(async b=>{if(!b)return;const f=new File([b],"quiz-result.png",{type:"image/png"});
-  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:"Can you beat my score? "+(GAME_URL||location.origin)});return}}catch(e){if(e&&e.name==="AbortError")return}
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:siteLink()});return}}catch(e){if(e&&e.name==="AbortError")return}
   const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="quiz-result.png";document.body.appendChild(a);a.click();a.remove()},"image/png")}
 
 function today(d){return (d||new Date()).toLocaleDateString('en-CA')}
